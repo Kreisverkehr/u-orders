@@ -1,0 +1,33 @@
+﻿@using System.Globalization
+@using UOrders.WebUI.Model
+
+<Addons>
+    <Addon AddonType="AddonType.Start">
+        <Div Style="width: 75px">
+            <Select TValue="string" @bind-SelectedValue="Item.Lang">
+                @foreach (var lang in SupportedLanguages)
+                            {
+                <SelectItem Value="@lang">@(lang)</SelectItem>
+                            }
+            </Select>
+        </Div>
+    </Addon>
+    <Addon AddonType="AddonType.Body">
+        <TextEdit @bind-Text="Item.Text" Placeholder="Title..." />
+    </Addon>
+    <Addon AddonType="AddonType.End">
+        <Button Color="Color.Danger" Clicked="RemoveRequested">
+            <Icon Name="IconName.Delete" /></Button>
+    </Addon>
+</Addons>
+
+@code {
+    [Parameter]
+    public IEnumerable<string> SupportedLanguages { get; set; } = new string[] { "en", "de", "it" };
+
+    [Parameter]
+    public LocalizedText Item { get; set; } = new();
+
+    [Parameter]
+    public EventCallback RemoveRequested { get; set; }
+}

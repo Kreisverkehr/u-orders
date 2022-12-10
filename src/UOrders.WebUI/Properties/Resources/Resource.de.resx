@@ -1,0 +1,438 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="str_enum_menuitemoptiontype_multiselect" xml:space="preserve">
+    <value>Mehrfachauswahl</value>
+  </data>
+  <data name="str_enum_menuitemoptiontype_selection" xml:space="preserve">
+    <value>Einzelauswahl</value>
+  </data>
+  <data name="str_nav_entry_admin" xml:space="preserve">
+    <value>Menü bearbeiten</value>
+  </data>
+  <data name="str_nav_entry_login" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="str_nav_entry_logout" xml:space="preserve">
+    <value>Abmelden</value>
+  </data>
+  <data name="str_nav_entry_menu" xml:space="preserve">
+    <value>Menü</value>
+  </data>
+  <data name="str_nav_entry_mydata" xml:space="preserve">
+    <value>Meine Daten</value>
+  </data>
+  <data name="str_nav_entry_orders" xml:space="preserve">
+    <value>Bestellungen</value>
+  </data>
+  <data name="str_nav_entry_register" xml:space="preserve">
+    <value>Registrieren</value>
+  </data>
+  <data name="str_nav_entry_startpage" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="str_nav_entry_users" xml:space="preserve">
+    <value>Benutzerverwaltung</value>
+  </data>
+  <data name="str_pg_addreview_btn_submit" xml:space="preserve">
+    <value>Bewertung absenden</value>
+  </data>
+  <data name="str_pg_addreview_err_noorderid" xml:space="preserve">
+    <value>Dieser Link ist nicht gültig. Bitte prüfen!</value>
+  </data>
+  <data name="str_pg_addreview_err_submit" xml:space="preserve">
+    <value>Fehler beim Absenden der Bewertung. Bitte versuchen Sie es später noch einmal.</value>
+  </data>
+  <data name="str_pg_addreview_succ_reviewadded" xml:space="preserve">
+    <value>Vielen Dank! Deine Bewertung wurde gespeichert.</value>
+  </data>
+  <data name="str_pg_addreview_title" xml:space="preserve">
+    <value>Bewertung erstellen</value>
+  </data>
+  <data name="str_pg_admin_btn_addcat" xml:space="preserve">
+    <value>Kategorie hinzufügen</value>
+  </data>
+  <data name="str_pg_admin_cateditmod_btn_close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="str_pg_admin_cateditmod_btn_save" xml:space="preserve">
+    <value>Änderungen speichern</value>
+  </data>
+  <data name="str_pg_admin_cateditmod_fldlbl_desc" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="str_pg_admin_cateditmod_fldlbl_title" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+  <data name="str_pg_admin_cateditmod_fldplhldr_desc" xml:space="preserve">
+    <value>Beschreibung eingeben</value>
+  </data>
+  <data name="str_pg_admin_cateditmod_fldplhldr_title" xml:space="preserve">
+    <value>Titel eingeben</value>
+  </data>
+  <data name="str_pg_admin_cateditmod_title" xml:space="preserve">
+    <value>Kategorie "{0}" bearbeiten</value>
+  </data>
+  <data name="str_pg_admin_delmod_body" xml:space="preserve">
+    <value>Soll das Objekt und alle abhängigen Objekte wirklich gelöscht werden?</value>
+  </data>
+  <data name="str_pg_admin_delmod_btn_cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="str_pg_admin_delmod_btn_delete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="str_pg_admin_delmod_title" xml:space="preserve">
+    <value>Löschen bestätigen</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_btn_close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_btn_save" xml:space="preserve">
+    <value>Änderungen speichern</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_fldbtn_addopt" xml:space="preserve">
+    <value>Option hinzufügen</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_fldbtn_copyopt" xml:space="preserve">
+    <value>Optionen kopieren</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_fldlbl_desc" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_fldlbl_opts" xml:space="preserve">
+    <value>Optionen</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_fldlbl_price" xml:space="preserve">
+    <value>Preis</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_fldlbl_title" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_fldplhldr_desc" xml:space="preserve">
+    <value>Beschreibung eingeben</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_fldplhldr_title" xml:space="preserve">
+    <value>Titel eingeben</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_lstopts_lbl_opttype" xml:space="preserve">
+    <value>Art: {0}</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_lstopts_lbl_valprice" xml:space="preserve">
+    <value>Preis: {0}</value>
+  </data>
+  <data name="str_pg_admin_itmeditmod_title" xml:space="preserve">
+    <value>Eintrag "{0}" bearbeiten</value>
+  </data>
+  <data name="str_pg_admin_opteditmod_btn_ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="str_pg_admin_opteditmod_fldlbl_name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="str_pg_admin_opteditmod_fldlbl_type" xml:space="preserve">
+    <value>Art</value>
+  </data>
+  <data name="str_pg_admin_opteditmod_fldplhldr_name" xml:space="preserve">
+    <value>Name eingeben</value>
+  </data>
+  <data name="str_pg_admin_opteditmod_title" xml:space="preserve">
+    <value>Option "{0}" bearbeiten</value>
+  </data>
+  <data name="str_pg_admin_title" xml:space="preserve">
+    <value>Menü bearbeiten</value>
+  </data>
+  <data name="str_pg_admin_txt_notauthorized" xml:space="preserve">
+    <value>Nicht autorisiert</value>
+  </data>
+  <data name="str_pg_admin_valeditmod_btn_ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="str_pg_admin_valeditmod_fldlbl_name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="str_pg_admin_valeditmod_fldlbl_price" xml:space="preserve">
+    <value>Preis</value>
+  </data>
+  <data name="str_pg_admin_valeditmod_fldplhldr_name" xml:space="preserve">
+    <value>Name eingeben</value>
+  </data>
+  <data name="str_pg_admin_valeditmod_title" xml:space="preserve">
+    <value>Optionswert "{0}" bearbeiten</value>
+  </data>
+  <data name="str_pg_cart_btn_next" xml:space="preserve">
+    <value>Weiter</value>
+  </data>
+  <data name="str_pg_cart_btn_prev" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="str_pg_cart_btn_sendorder" xml:space="preserve">
+    <value>Bestellung absenden</value>
+  </data>
+  <data name="str_pg_cart_delmod_body" xml:space="preserve">
+    <value>Soll "{0}" wirklich gelöscht werden?</value>
+  </data>
+  <data name="str_pg_cart_delmod_btn_cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="str_pg_cart_delmod_btn_delete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="str_pg_cart_delmod_title" xml:space="preserve">
+    <value>Eintrag löschen?</value>
+  </data>
+  <data name="str_pg_cart_step_checkcart_btn_clear_all" xml:space="preserve">
+    <value>Warenkorb leeren</value>
+  </data>
+  <data name="str_pg_cart_step_checkcart_fldlbl_itmrem" xml:space="preserve">
+    <value>Schneiden, ohne Käse, etc.</value>
+  </data>
+  <data name="str_pg_cart_step_checkcart_name" xml:space="preserve">
+    <value>Warenkorb prüfen</value>
+  </data>
+  <data name="str_pg_cart_step_checkorder_name" xml:space="preserve">
+    <value>Bestellung prüfen</value>
+  </data>
+  <data name="str_pg_cart_step_complete_name" xml:space="preserve">
+    <value>Fertig</value>
+  </data>
+  <data name="str_pg_cart_step_complete_txt_sending" xml:space="preserve">
+    <value>Sende Bestellung...</value>
+  </data>
+  <data name="str_pg_cart_step_complete_txt_sent" xml:space="preserve">
+    <value>Bestellung abgesendet.</value>
+  </data>
+  <data name="str_pg_cart_step_enterdetails_fldlbl_mail" xml:space="preserve">
+    <value>E-Mail Adresse</value>
+  </data>
+  <data name="str_pg_cart_step_enterdetails_fldlbl_name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="str_pg_cart_step_enterdetails_fldplbl_phone" xml:space="preserve">
+    <value>Telefonnummer</value>
+  </data>
+  <data name="str_pg_cart_step_enterdetails_fldplbl_rem" xml:space="preserve">
+    <value>Anmerkungen</value>
+  </data>
+  <data name="str_pg_cart_step_enterdetails_fldplhldr_mail" xml:space="preserve">
+    <value>max.mustermann@example.com</value>
+  </data>
+  <data name="str_pg_cart_step_enterdetails_fldplhldr_name" xml:space="preserve">
+    <value>Bitte namen eingeben...</value>
+  </data>
+  <data name="str_pg_cart_step_enterdetails_fldpplhldr_rem" xml:space="preserve">
+    <value>Weitere Anmerkungen zur Bestellung</value>
+  </data>
+  <data name="str_pg_cart_step_enterdetails_name" xml:space="preserve">
+    <value>Details eingeben</value>
+  </data>
+  <data name="str_pg_cart_title" xml:space="preserve">
+    <value>Warenkorb</value>
+  </data>
+  <data name="str_pg_login_btn_login" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="str_pg_login_fldplhldr_pass" xml:space="preserve">
+    <value>Passwort</value>
+  </data>
+  <data name="str_pg_login_fldplhldr_user" xml:space="preserve">
+    <value>Benutzername</value>
+  </data>
+  <data name="str_pg_login_msg_loginfailed" xml:space="preserve">
+    <value>Anmeldung fehlgeschlagen. Überprüfen Sie den Benutzernamen und das Passwort.</value>
+  </data>
+  <data name="str_pg_login_msg_username_required" xml:space="preserve">
+    <value>Bitte Benutzernamen angeben.</value>
+  </data>
+  <data name="str_pg_login_msg_username_taken" xml:space="preserve">
+    <value>Der Benutzername ist bereits vergeben!</value>
+  </data>
+  <data name="str_pg_login_msg_username_tooshort" xml:space="preserve">
+    <value>Der Benutzername muss mindestens zwei Zeichen lang sein.</value>
+  </data>
+  <data name="str_pg_login_title" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="str_pg_menu_itmmod_btn_addtocart" xml:space="preserve">
+    <value>Hinzufügen {0}</value>
+  </data>
+  <data name="str_pg_menu_itmmod_btn_cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="str_pg_menu_itmmod_fldlbl_count" xml:space="preserve">
+    <value>Anzahl</value>
+  </data>
+  <data name="str_pg_menu_itmmod_fldlbl_rem" xml:space="preserve">
+    <value>Bemerkungen</value>
+  </data>
+  <data name="str_pg_menu_itmmod_fldplhldr_rem" xml:space="preserve">
+    <value>Bemerkungen hier eintragen...</value>
+  </data>
+  <data name="str_pg_menu_title" xml:space="preserve">
+    <value>Menü</value>
+  </data>
+  <data name="str_pg_mydata_btn_update" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="str_pg_mydata_title" xml:space="preserve">
+    <value>Meine Daten</value>
+  </data>
+  <data name="str_pg_orders_title" xml:space="preserve">
+    <value>Letzte Bestellungen</value>
+  </data>
+  <data name="str_pg_orders_txt_noorders" xml:space="preserve">
+    <value>Keine Bestellungen</value>
+  </data>
+  <data name="str_pg_orders_txt_notauthorized" xml:space="preserve">
+    <value>Nicht autorisiert</value>
+  </data>
+  <data name="str_pg_register_btn_register" xml:space="preserve">
+    <value>Registrieren</value>
+  </data>
+  <data name="str_pg_register_fldplhldr_confirmpass" xml:space="preserve">
+    <value>Passwort bestätigen</value>
+  </data>
+  <data name="str_pg_register_fldplhldr_mail" xml:space="preserve">
+    <value>E-Mail Adresse</value>
+  </data>
+  <data name="str_pg_register_fldplhldr_name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="str_pg_register_fldplhldr_pass" xml:space="preserve">
+    <value>Passwort</value>
+  </data>
+  <data name="str_pg_register_fldplhldr_phone" xml:space="preserve">
+    <value>Telefonnummer</value>
+  </data>
+  <data name="str_pg_register_fldplhldr_user" xml:space="preserve">
+    <value>Benutzername</value>
+  </data>
+  <data name="str_pg_register_title" xml:space="preserve">
+    <value>Registrieren</value>
+  </data>
+  <data name="str_pg_users_title" xml:space="preserve">
+    <value>Benutzerverwaltung</value>
+  </data>
+  <data name="str_pg_users_txt_notauthorized" xml:space="preserve">
+    <value>Nicht autorisiert</value>
+  </data>
+  <data name="str_sys_api_lang" xml:space="preserve">
+    <value>de</value>
+  </data>
+</root>

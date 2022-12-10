@@ -1,0 +1,469 @@
+﻿@page "/Admin"
+@using Microsoft.Extensions.Options
+@using UOrders.DTOModel.V1
+@using UOrders.DTOModel.V1.Authentication
+@using UOrders.WebUI.Model
+@using UOrders.WebUI.Options
+@using UOrders.WebUI.Services
+@inject IUOrdersService _service
+@inject IOptions<BrandOptions> _brand
+@inject IStringLocalizer<Resource> _localizer
+
+<PageTitle>@_localizer["str_pg_admin_title"]</PageTitle>
+<AuthorizeView Roles="@UserRoles.Admin">
+    <NotAuthorized>
+        <Paragraph>@_localizer["str_pg_admin_txt_notauthorized"]</Paragraph>
+    </NotAuthorized>
+    <Authorized>
+        @if (categories.Count > 0)
+        {
+            <Button Color="Color.Success" Clicked="AddCategory">@_localizer["str_pg_admin_btn_addcat"]</Button>
+            <ListGroup>
+                @foreach (var cat in categories)
+                {
+                    <ListGroupItem Name="@("C" + cat.ID.ToString())" Flex="Flex.JustifyContent.Between.AlignItems.Center" Color="Color.Secondary">
+                        <Span TextWeight="TextWeight.Bold">@cat.Title[""]</Span>
+                        <Div>
+                            <Button Color="Color.Success" Clicked="() => AddItem(cat.ID)">
+                                <Icon Name="IconName.Add" />
+                            </Button>
+                            <Button Color="Color.Danger" Clicked="() => DeleteCategory(cat.ID)">
+                                <Icon Name="IconName.Delete" />
+                            </Button>
+                            <Button Color="Color.Primary" Clicked="() => EditCategory(cat)">
+                                <Icon Name="IconName.Pen" />
+                            </Button>
+                        </Div>
+                    </ListGroupItem>
+                    @foreach (var item in cat.Items)
+                    {
+                        <ListGroupItem Name="@("I" + item.ID.ToString())" Flex="Flex.JustifyContent.Between.AlignItems.Center">
+                            <Span Margin="Margin.Is2.FromStart">@item.Title[""]</Span>
+                            <Div>
+                                <Button Color="Color.Danger" Clicked="() => DeleteItem(item.ID)">
+                                    <Icon Name="IconName.Delete" />
+                                </Button>
+                                <Button Color="Color.Primary" Clicked="() => EditItem(item, cat.ID)">
+                                    <Icon Name="IconName.Pen" />
+                                </Button>
+                            </Div>
+                        </ListGroupItem>
+                    }
+                }
+            </ListGroup>
+        }
+        else
+        {
+            <Div Position="Position.Relative" Style="height: 50px">
+                <Div Position="Position.Absolute.Top.Is50.Start.Is50.Translate.Middle">
+                    <SpinKit Type="SpinKitType.Wave" />
+                </Div>
+            </Div>
+        }
+        <Modal @ref="categoryEditor">
+            <ModalContent Centered Scrollable>
+                <ModalHeader>
+                    <ModalTitle>@_localizer["str_pg_admin_cateditmod_title", categoryToEdit.Title]</ModalTitle>
+                    <CloseButton />
+                </ModalHeader>
+                <ModalBody>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_cateditmod_fldlbl_title"]</FieldLabel>
+                        <TextEdit @bind-Text="categoryToEdit.Title" Placeholder="@_localizer["str_pg_admin_cateditmod_fldplhldr_title"]" />
+                        @foreach (var text in categoryToEdit.TitleLocalized)
+                        {
+                            <LocalizedTextEdit Item="text" RemoveRequested="() => categoryToEdit.TitleLocalized.Remove(text)" SupportedLanguages="SupportedLanguages" />
+                        }
+                        @if (SupportedLanguages.Count() > categoryToEdit.TitleLocalized.Count())
+                            {
+                            <Button Color="Color.Success" Clicked="() => categoryToEdit.TitleLocalized.Add(new(SupportedLanguages.Except(categoryToEdit.TitleLocalized.Select(t => t.Lang)).FirstOrDefault() ?? string.Empty))">
+                                    <Icon Name="IconName.Add" />
+                            </Button>
+                        }
+                    </Field>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_cateditmod_fldlbl_desc"]</FieldLabel>
+                        <TextEdit @bind-Text="categoryToEdit.Description" Placeholder="@_localizer["str_pg_admin_cateditmod_fldplhldr_desc"]" />
+                        @foreach (var text in categoryToEdit.DescriptionLocalized)
+                        {
+                            <LocalizedTextEdit Item="text" RemoveRequested="() => categoryToEdit.DescriptionLocalized.Remove(text)" />
+                        }
+                        @if (SupportedLanguages.Count() > categoryToEdit.DescriptionLocalized.Count())
+                        {
+                            <Button Color="Color.Success" Clicked="() => categoryToEdit.DescriptionLocalized.Add(new(SupportedLanguages.Except(categoryToEdit.DescriptionLocalized.Select(t => t.Lang)).FirstOrDefault() ?? string.Empty))">
+                                <Icon Name="IconName.Add" />
+                            </Button>
+                        }
+                    </Field>
+                </ModalBody>
+                <ModalFooter>
+                    <Button Color="Color.Secondary" Clicked="() => { categoryEditor?.Hide(); }">@_localizer["str_pg_admin_cateditmod_btn_close"]</Button>
+                    <Button Color="Color.Primary" Clicked="@SaveCategory">@_localizer["str_pg_admin_cateditmod_btn_save"]</Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+        <Modal @ref="itemEditor">
+            <ModalContent Centered Scrollable>
+                <ModalHeader>
+                    <ModalTitle>@_localizer["str_pg_admin_itmeditmod_title", itemToEdit.Title]</ModalTitle>
+                    <CloseButton />
+                </ModalHeader>
+                <ModalBody>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_itmeditmod_fldlbl_title"]</FieldLabel>
+                        <TextEdit @bind-Text="itemToEdit.Title" Placeholder="@_localizer["str_pg_admin_itmeditmod_fldplhldr_title"]" />
+                        @foreach (var text in itemToEdit.TitleLocalized)
+                        {
+                            <LocalizedTextEdit Item="text" RemoveRequested="() => itemToEdit.TitleLocalized.Remove(text)" />
+                        }
+                        @if (SupportedLanguages.Count() > itemToEdit.TitleLocalized.Count())
+                        {
+                            <Button Color="Color.Success" Clicked="() => itemToEdit.TitleLocalized.Add(new(SupportedLanguages.Except(itemToEdit.TitleLocalized.Select(t => t.Lang)).FirstOrDefault() ?? string.Empty))">
+                                <Icon Name="IconName.Add" />
+                            </Button>
+                        }
+                    </Field>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_itmeditmod_fldlbl_desc"]</FieldLabel>
+                        <TextEdit @bind-Text="itemToEdit.Description" Placeholder="@_localizer["str_pg_admin_itmeditmod_fldplhldr_desc"]" />
+                        @foreach (var text in itemToEdit.DescriptionLocalized)
+                        {
+                            <LocalizedTextEdit Item="text" RemoveRequested="() => itemToEdit.DescriptionLocalized.Remove(text)" />
+                        }
+                        @if (SupportedLanguages.Count() > itemToEdit.DescriptionLocalized.Count())
+                        {
+                            <Button Color="Color.Success" Clicked="() => itemToEdit.DescriptionLocalized.Add(new(SupportedLanguages.Except(itemToEdit.DescriptionLocalized.Select(t => t.Lang)).FirstOrDefault() ?? string.Empty))">
+                                <Icon Name="IconName.Add" />
+                            </Button>
+                        }
+                    </Field>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_itmeditmod_fldlbl_price"]</FieldLabel>
+                        <NumericEdit TValue="decimal" @bind-Value="itemToEdit.CurrentPrice" />
+                    </Field>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_itmeditmod_fldlbl_opts"]</FieldLabel>
+                        <Button Color="Color.Success" Clicked="AddOption">@_localizer["str_pg_admin_itmeditmod_fldbtn_addopt"]</Button>
+                        <Dropdown>
+                            <DropdownToggle Color="Color.Dark">@_localizer["str_pg_admin_itmeditmod_fldbtn_copyopt"]</DropdownToggle>
+                            <DropdownMenu>
+                                @foreach(var item in categories.Where(c => c.ID == itemToEdit.CategoryId).FirstOrDefault()?.Items.Where(i => i.ID != itemToEdit.ID) ?? Enumerable.Empty<MenuItemDetailedDTO>())
+                                {
+                                    <DropdownItem Clicked="() => itemToEdit.AddOptionsFrom(item.Options)" Disabled="@(!item.Options.Any())">@item.Title[""]</DropdownItem>
+                                }
+                                @if(categories.Where(c => c.ID != itemToEdit.CategoryId).Any())
+                                {
+                                    <DropdownDivider />
+                                    @foreach(var cat in categories.Where(c => c.ID != itemToEdit.CategoryId))
+                                    {
+                                        <Dropdown>
+                                            <DropdownToggle>@cat.Title[""]</DropdownToggle>
+                                        <DropdownMenu>
+                                            @foreach(var item in cat.Items)
+                                            {
+                                                <DropdownItem Clicked="() => itemToEdit.AddOptionsFrom(item.Options)" Disabled="@(!item.Options.Any())">@item.Title[""]</DropdownItem>
+                                            }
+                                        </DropdownMenu>
+                                        </Dropdown>
+                                    }
+                                }
+                            </DropdownMenu>
+                        </Dropdown>
+                        <ListGroup>
+                            @foreach (var opt in itemToEdit.Options)
+                            {
+                                <ListGroupItem Name="@("O" + opt.ID.ToString())" Flex="Flex.JustifyContent.Between.AlignItems.Center" Color="Color.Secondary">
+                                    <Div>
+                                        <Paragraph TextWeight="TextWeight.Bold" Margin="Margin.Is1.FromBottom">@opt.Name</Paragraph>
+                                        <Small>@_localizer["str_pg_admin_itmeditmod_lstopts_lbl_opttype", _localizer[$"str_enum_menuitemoptiontype_{opt.OptionType.ToString().ToLowerInvariant()}"]]</Small>
+                                    </Div>
+                                    <Div>
+                                        <Button Color="Color.Success" Clicked="() => AddValue(opt)">
+                                            <Icon Name="IconName.Add" />
+                                        </Button>
+                                        <Button Color="Color.Danger" Clicked="() => itemToEdit.MarkOptionForDeletion(opt)">
+                                            <Icon Name="IconName.Delete" />
+                                        </Button>
+                                        <Button Color="Color.Primary" Clicked="() => EditOption(opt)">
+                                            <Icon Name="IconName.Pen" />
+                                        </Button>
+                                    </Div>
+                                </ListGroupItem>
+                                @foreach (var val in opt.Values)
+                                {
+                                    <ListGroupItem Name="@("V" + val.ID.ToString())" Flex="Flex.JustifyContent.Between.AlignItems.Center">
+                                        <Div Margin="Margin.Is2.FromStart">
+                                            <Paragraph TextWeight="TextWeight.Bold" Margin="Margin.Is1.FromBottom">@val.Name</Paragraph>
+                                            <Small>@_localizer["str_pg_admin_itmeditmod_lstopts_lbl_valprice", val.PriceChangeToBase.ToString("c", _brand.Value.CurrencyFormatProvider)]</Small>
+                                        </Div>
+                                        <Div>
+                                            <Button Color="Color.Danger">
+                                                <Icon Name="IconName.Delete" Clicked="() => opt.DeleteValue(val)" />
+                                            </Button>
+                                            <Button Color="Color.Primary" Clicked="() => EditValue(val)">
+                                                <Icon Name="IconName.Pen" />
+                                            </Button>
+                                        </Div>
+                                    </ListGroupItem>
+                                }
+                            }
+                        </ListGroup>
+                    </Field>
+                </ModalBody>
+                <ModalFooter>
+                    <Button Color="Color.Secondary" Clicked="() => { itemEditor?.Hide(); }">@_localizer["str_pg_admin_itmeditmod_btn_close"]</Button>
+                    <Button Color="Color.Primary" Clicked="@SaveItem">@_localizer["str_pg_admin_itmeditmod_btn_save"]</Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+        <Modal @ref="optionEditor">
+            <ModalContent Centered Scrollable>
+                <ModalHeader>
+                    <ModalTitle>@_localizer["str_pg_admin_opteditmod_title", optionToEdit.Name]</ModalTitle>
+                    <CloseButton />
+                </ModalHeader>
+                <ModalBody>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_opteditmod_fldlbl_name"]</FieldLabel>
+                        <TextEdit @bind-Text="optionToEdit.Name" Placeholder="@_localizer["str_pg_admin_opteditmod_fldplhldr_name"]" />
+                        @foreach (var text in optionToEdit.NameLocalized)
+                        {
+                            <LocalizedTextEdit Item="text" RemoveRequested="() => optionToEdit.NameLocalized.Remove(text)" />
+                        }
+                        @if (SupportedLanguages.Count() > optionToEdit.NameLocalized.Count())
+                        {
+                            <Button Color="Color.Success" Clicked="() => optionToEdit.NameLocalized.Add(new(SupportedLanguages.Except(optionToEdit.NameLocalized.Select(t => t.Lang)).FirstOrDefault() ?? string.Empty))">
+                                <Icon Name="IconName.Add" />
+                            </Button>
+                        }
+                    </Field>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_opteditmod_fldlbl_type"]</FieldLabel>
+                        <Select TValue="MenuItemOptionTypeDTO" @bind-SelectedValue="optionToEdit.OptionType">
+                            <SelectItem Value="MenuItemOptionTypeDTO.Selection">@_localizer["str_enum_menuitemoptiontype_selection"]</SelectItem>
+                            <SelectItem Value="MenuItemOptionTypeDTO.MultiSelect">@_localizer["str_enum_menuitemoptiontype_multiselect"]</SelectItem>
+                        </Select>
+                    </Field>
+                </ModalBody>
+                <ModalFooter>
+                    <Button Color="Color.Primary" Clicked="() => { optionEditor?.Hide(); }">@_localizer["str_pg_admin_opteditmod_btn_ok"]</Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+        <Modal @ref="valueEditor">
+            <ModalContent Centered Scrollable>
+                <ModalHeader>
+                    <ModalTitle>@_localizer["str_pg_admin_valeditmod_title", valueToEdit.Name]</ModalTitle>
+                    <CloseButton />
+                </ModalHeader>
+                <ModalBody>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_valeditmod_fldlbl_name"]</FieldLabel>
+                        <TextEdit @bind-Text="valueToEdit.Name" Placeholder="@_localizer["str_pg_admin_valeditmod_fldplhldr_name"]" />
+                        @foreach (var text in valueToEdit.NameLocalized)
+                        {
+                            <LocalizedTextEdit Item="text" RemoveRequested="() => valueToEdit.NameLocalized.Remove(text)" />
+                        }
+                        @if (SupportedLanguages.Count() > valueToEdit.NameLocalized.Count())
+                        {
+                            <Button Color="Color.Success" Clicked="() => valueToEdit.NameLocalized.Add(new(SupportedLanguages.Except(valueToEdit.NameLocalized.Select(t => t.Lang)).FirstOrDefault() ?? string.Empty))">
+                                <Icon Name="IconName.Add" />
+                            </Button>
+                        }
+                    </Field>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_admin_valeditmod_fldlbl_price"]</FieldLabel>
+                        <NumericEdit TValue="decimal" @bind-Value="valueToEdit.PriceChangeToBase" />
+                    </Field>
+                </ModalBody>
+                <ModalFooter>
+                    <Button Color="Color.Primary" Clicked="() => { valueEditor?.Hide(); }">@_localizer["str_pg_admin_valeditmod_btn_ok"]</Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+        <Modal @ref="deletePromt" Closed="DeletePromtClosed">
+            <ModalContent>
+                <ModalHeader>
+                    <ModalTitle>@_localizer["str_pg_admin_delmod_title"]</ModalTitle>
+                    <CloseButton />
+                </ModalHeader>
+                <ModalBody>
+                    <Paragraph>@_localizer["str_pg_admin_delmod_body"]</Paragraph>
+                </ModalBody>
+                <ModalFooter>
+                    <Button Color="Color.Secondary" Clicked="() => { deletePromt?.Hide(); }">@_localizer["str_pg_admin_delmod_btn_cancel"]</Button>
+                    <Button Color="Color.Danger" Clicked="DeleteObject">@_localizer["str_pg_admin_delmod_btn_delete"]</Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+    </Authorized>
+</AuthorizeView>
+@code {
+    string[] SupportedLanguages { get; set; } = new string[] { "en", "de", "it" };
+    List<MenuCategoryDetailedDTO> categories = new List<MenuCategoryDetailedDTO>();
+    Modal? categoryEditor;
+    Modal? itemEditor;
+    Modal? deletePromt;
+    Modal? optionEditor;
+    Modal? valueEditor;
+    MenuCategoryEdit categoryToEdit = new();
+    MenuItemEdit itemToEdit = new();
+    MenuItemOptionEdit optionToEdit = new();
+    MenuItemOptionValueEdit valueToEdit = new();
+
+    int categoryToDelete;
+    int itemToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        categories.Clear();
+        var cats = await _service.GetMenu() ?? Enumerable.Empty<MenuCategoryDTO>();
+        foreach (var cat in cats)
+        {
+            var detailedCat = await _service.GetMenuCategory(cat.ID);
+            if (detailedCat != null)
+                categories.Add(detailedCat);
+        }
+    }
+
+    private void DeleteCategory(int categoryId)
+    {
+        categoryToDelete = categoryId;
+        deletePromt?.Show();
+    }
+
+    private void AddCategory()
+    {
+        categoryToEdit = new();
+        categoryEditor?.Show();
+    }
+
+    private void EditCategory(MenuCategoryDetailedDTO cat)
+    {
+        categoryToEdit = cat;
+        categoryEditor?.Show();
+    }
+
+    private async Task SaveCategory()
+    {
+        if (categoryToEdit.ID != default)
+            await _service.UpdateCategory(categoryToEdit, categoryToEdit.ID);
+        else
+            await _service.CreateCategory(categoryToEdit);
+
+        categoryEditor?.Hide();
+        await LoadData();
+    }
+
+    private void DeleteItem(int itemId)
+    {
+        itemToDelete = itemId;
+        deletePromt?.Show();
+    }
+
+    private void AddItem(int categoryId)
+    {
+        itemToEdit = new();
+        itemToEdit.CategoryId = categoryId;
+        itemEditor?.Show();
+    }
+
+    private void EditItem(MenuItemDetailedDTO itm, int categoryId)
+    {
+        itemToEdit = itm;
+        itemToEdit.CategoryId = categoryId;
+        itemEditor?.Show();
+    }
+
+    private void CloneItemOptionsFrom(IEnumerable<MenuItemOptionDetailedDTO> menuItemOptions)
+    {
+        itemToEdit?.AddOptionsFrom(menuItemOptions);
+        StateHasChanged();
+    }
+
+    private async Task SaveItem()
+    {
+        if (itemToEdit.ID != default)
+        {
+            await _service.UpdateMenuItem(itemToEdit, itemToEdit.ID);
+            if (itemToEdit.HasPriceChanged)
+                await _service.UpdateItemPrice(itemToEdit.ID, itemToEdit.CurrentPrice);
+            foreach (var opt in itemToEdit.AddedOptions)
+                await _service.CreateMenuItemOption(opt, itemToEdit.ID);
+            foreach (var opt in itemToEdit.DeletedOptions)
+                await _service.DeleteMenuItemOption(itemToEdit.ID, opt.ID);
+            foreach (var opt in itemToEdit.Options
+                .Except(itemToEdit.DeletedOptions)
+                .Except(itemToEdit.AddedOptions))
+            {
+                await _service.UpdateMenuItemOption(opt, itemToEdit.ID, opt.ID);
+                foreach (var val in opt.AddedValues)
+                    await _service.CreateMenuItemOptionValue(val, itemToEdit.ID, opt.ID);
+                foreach (var val in opt.DeletedValues)
+                    await _service.DeleteMenuItemOptionValue(itemToEdit.ID, opt.ID, val.ID);
+                foreach (var val in opt.Values
+                    .Except(opt.DeletedValues)
+                    .Except(opt.AddedValues))
+                {
+                    await _service.UpdateMenuItemOptionValue(val, itemToEdit.ID, opt.ID, val.ID);
+                    if (val.HasPriceChanged)
+                        await _service.UpdateItemOptionValuePrice(itemToEdit.ID, opt.ID, val.ID, val.PriceChangeToBase);
+                }
+
+            }
+        }
+        else
+            await _service.CreateMenuItem(itemToEdit, itemToEdit.CategoryId);
+
+        itemEditor?.Hide();
+        await LoadData();
+    }
+
+    private void DeletePromtClosed()
+    {
+        categoryToDelete = default;
+        itemToDelete = default;
+    }
+
+    private async Task DeleteObject()
+    {
+        if (categoryToDelete != default)
+            await _service.DeleteCategory(categoryToDelete);
+        if (itemToDelete != default)
+            await _service.DeleteMenuItem(itemToDelete);
+
+        deletePromt?.Hide();
+        await LoadData();
+    }
+
+    private void AddOption()
+    {
+        optionToEdit = itemToEdit.AddOption();
+        optionEditor?.Show();
+    }
+
+    private void EditOption(MenuItemOptionEdit opt)
+    {
+        optionToEdit = opt;
+        optionEditor?.Show();
+    }
+
+    private void AddValue(MenuItemOptionEdit opt)
+    {
+        valueToEdit = opt.AddValue();
+        valueEditor?.Show();
+    }
+
+    private void EditValue(MenuItemOptionValueEdit val)
+    {
+        valueToEdit = val;
+        valueEditor?.Show();
+    }
+}
+

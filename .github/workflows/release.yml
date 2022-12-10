@@ -1,0 +1,289 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '.github/**'
+    tags:
+      - v*
+
+jobs:
+
+  set-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.gitversion.outputs.majorMinorPatch }}
+      major: ${{ steps.gitversion.outputs.major }}
+      minor: ${{ steps.gitversion.outputs.minor }}
+      patch: ${{ steps.gitversion.outputs.patch }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup .NET6
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v0.9.15
+      with:
+        versionSpec: '5.x'
+    - name: Determine Version
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v0.9.15
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [set-version]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore ./src/UOrders.sln
+    - name: Build
+      run: dotnet build ./src/UOrders.sln --no-restore
+    - name: Publish
+      run: dotnet publish ./src/UOrders.sln -c Release -p:PublishDir=./publish
+    - name: Copy build artifacts to staging
+      run: |
+       mkdir -p ./staging/UOrders.Api
+       cp -r ./src/UOrders.Api/publish/* ./staging/UOrders.Api/ 
+       mkdir -p ./staging/UOrders.Service
+       cp -r ./src/UOrders.Service/publish/* ./staging/UOrders.Service/ 
+       mkdir -p ./staging/UOrders.PrintService
+       cp -r ./src/UOrders.PrintService/publish/* ./staging/UOrders.PrintService/ 
+       mkdir -p ./staging/UOrders.WebUI
+       cp -r ./src/UOrders.WebUI/publish/* ./staging/UOrders.WebUI/
+    - name: Remove unwanted files
+      run: |
+       find ./staging -type f -name '*.pdb' -exec rm {} +
+       rm ./staging/UOrders.Api/UOrders.Api
+       rm ./staging/UOrders.Service/UOrders.Service
+       rm ./staging/UOrders.PrintService/UOrders.PrintService
+    - name: Zip Output
+      run: 7z a -tzip ${{ github.event.repository.name }}-${{ needs.set-version.outputs.version }}.zip ./staging/*
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: publish-output
+        path: ${{ github.workspace }}/${{ github.event.repository.name }}-${{ needs.set-version.outputs.version }}.zip
+        retention-days: 1
+
+  init-docker-builds:
+    runs-on: ubuntu-latest
+    outputs:
+      docker-repo: ${{ steps.repo.outputs.lowercase }}
+    steps:
+    - id: repo
+      uses: ASzc/change-string-case-action@v5
+      with:
+        string: ${{ github.repository }}
+
+# Tag pattern: latest-{tag}-{type}-{archtag}
+  build-docker:
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+    needs: [init-docker-builds, set-version, build]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-2022, windows-2019]
+        project: [UOrders.Api, UOrders.Service, UOrders.PrintService, UOrders.WebUI]
+        arch: [amd64, arm64, arm/v7]
+        dockerfile: [Dockerfile.ci]
+        include:
+          - project: UOrders.Api
+            tag: api
+          - project: UOrders.Service
+            tag: service
+          - project: UOrders.PrintService
+            tag: print
+          - project: UOrders.WebUI
+            tag: web
+          - os: windows-2022
+            type: windows
+            ostag: win2022
+          - os: windows-2019
+            type: windows
+            ostag: win2019
+          - os: ubuntu-latest
+            type: linux
+            ostag: linux
+          - arch: amd64
+            archtag: x64
+          - arch: arm64
+            archtag: arm64
+          - arch: arm/v7
+            archtag: arm
+          - os: windows-2022
+            ostag: win2022
+            project: UOrders.WebUI
+            arch: amd64
+            type: windows
+            tag: web
+            archtag: x64
+            dockerfile: Dockerfile.ci.win
+          - os: windows-2019
+            ostag: win2019
+            project: UOrders.WebUI
+            arch: amd64
+            type: windows
+            tag: web
+            archtag: x64
+            dockerfile: Dockerfile.ci.win
+        exclude:
+          - os: windows-2022
+            arch: arm64
+          - os: windows-2019
+            arch: arm64
+          - os: windows-2022
+            arch: arm/v7
+          - os: windows-2019
+            arch: arm/v7
+          - os: windows-2022
+            project: UOrders.WebUI
+            dockerfile: Dockerfile.ci
+          - os: windows-2019
+            project: UOrders.WebUI
+            dockerfile: Dockerfile.ci
+    steps:
+    - name: Login to Registry
+      uses: docker/login-action@v2
+      with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+    - run: |
+       echo os ${{ matrix.os}}
+       echo project ${{ matrix.project}}
+       echo arch ${{ matrix.arch}}
+       echo type ${{ matrix.type}}
+       echo archtag ${{ matrix.archtag}}
+       echo dockerfile ${{ matrix.dockerfile}}
+    - uses: actions/checkout@v3
+    - name: Download portable build
+      uses: actions/download-artifact@v3
+      with:
+        name: publish-output
+    - name: Extract binaries for container
+      run: |
+       7z x ${{ github.event.repository.name }}-${{ needs.set-version.outputs.version }}.zip ${{ matrix.project }}/* -oapp/
+       mv ./app/${{ matrix.project }}/* ./app
+    - name: Set up QEMU
+      if: runner.os != 'windows'
+      id: qemu
+      uses: docker/setup-qemu-action@v2
+      with:
+        image: tonistiigi/binfmt:latest
+        platforms: ${{ matrix.type }}/${{ matrix.arch }}
+    - name: Build docker image
+      run: docker build -t ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-${{ matrix.ostag }}-${{ matrix.archtag }} -f ./src/${{ matrix.project }}/${{ matrix.dockerfile }} --platform ${{ matrix.type }}/${{ matrix.arch }} .
+    - name: Push docker image
+      run: docker push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-${{ matrix.ostag }}-${{ matrix.archtag }}
+  
+  update-latest-tags:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+    needs: [build-docker, init-docker-builds, set-version]
+    strategy:
+      matrix:
+        tag: [api, service, print, web]
+    steps:
+    - name: Login to Registry
+      uses: docker/login-action@v2
+      with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create docker manifest
+      run: |
+        docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-latest \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm
+        docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}.${{ needs.set-version.outputs.minor }} \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm
+        docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }} \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm
+        docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-latest-win \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64
+        docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}.${{ needs.set-version.outputs.minor }}-win \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64
+        docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}-win \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64
+        docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-latest-linux \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm
+        docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}.${{ needs.set-version.outputs.minor }}-linux \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm
+        docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}-linux \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm64 \
+          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm
+    - name: Push manifest
+      run: |
+        docker manifest push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-latest
+        docker manifest push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}.${{ needs.set-version.outputs.minor }}
+        docker manifest push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}
+        docker manifest push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-latest-win
+        docker manifest push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}.${{ needs.set-version.outputs.minor }}-win
+        docker manifest push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}-win
+        docker manifest push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-latest-linux
+        docker manifest push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}.${{ needs.set-version.outputs.minor }}-linux
+        docker manifest push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}-linux
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [set-version, build]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v2
+    - name: Setup .NET3
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 3.0.x
+    - uses: gittools/actions/gitreleasemanager/setup@v0.9.15
+      name: Install GitReleaseManager
+      with:
+        versionSpec: '0.10.x'
+    - uses: gittools/actions/gitreleasemanager/create@v0.9.15
+      name: Create release with GitReleaseManager
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        owner: '${{ github.repository_owner }}'
+        repository: '${{ github.event.repository.name }}'
+        milestone: '${{ needs.set-version.outputs.version }}'
+        name: 'v${{ needs.set-version.outputs.version }}'
+        assets: publish-output/${{ github.event.repository.name }}-${{ needs.set-version.outputs.version }}.zip

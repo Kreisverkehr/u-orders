@@ -1,0 +1,68 @@
+version: '3.4'
+
+services:
+
+  db:
+    image: mysql:oracle
+    ports:
+      - 53306:3306/tcp
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpwd
+      - MYSQL_USER=dev
+      - MYSQL_PASSWORD=devpwd
+      - MYSQL_DATABASE=devdb
+
+  api:
+    image: ${DOCKER_REGISTRY-}uordersapi
+    build:
+      context: .
+      dockerfile: UOrders.Api/Dockerfile
+    depends_on:
+      - db
+      - uorders.service
+    links:
+      - db
+    environment:
+      - DB_PROVIDER=mysql
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_USER=dev
+      - MYSQL_PASSWORD=devpwd
+      - MYSQL_DATABASE=devdb
+
+  webui:
+    image: ${DOCKER_REGISTRY-}uorderswebui
+    build:
+      context: .
+      dockerfile: UOrders.WebUI/Dockerfile
+    volumes:
+      - ./UOrders.WebUI/wwwroot/appsettings.docker.json:/usr/share/nginx/html/appsettings.json
+    depends_on:
+      - api
+    links:
+      - api
+
+  uorders.service:
+    image: ${DOCKER_REGISTRY-}uordersservice
+    build:
+      context: .
+      dockerfile: UOrders.Service/Dockerfile
+    depends_on:
+      - db
+    links:
+      - db
+    environment:
+      - DB_PROVIDER=mysql
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_USER=dev
+      - MYSQL_PASSWORD=devpwd
+      - MYSQL_DATABASE=devdb
+
+
+  uorders.printservice:
+    image: ${DOCKER_REGISTRY-}uordersprintservice
+    build:
+      context: .
+      dockerfile: UOrders.PrintService/Dockerfile
+

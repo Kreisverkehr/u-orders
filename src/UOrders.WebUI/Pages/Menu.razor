@@ -1,0 +1,137 @@
+﻿@page "/Menu"
+@using Microsoft.Extensions.Options
+@using UOrders.DTOModel.V1
+@using UOrders.WebUI.Options
+@using UOrders.WebUI.Services
+@inject IUOrdersService _service
+@inject FrameworkDataService _frwData
+@inject CartService _cart
+@inject IOptions<BrandOptions> _brand
+@inject IStringLocalizer<Resource> _localizer
+
+<PageTitle>@_localizer["str_pg_menu_title"]</PageTitle>
+
+@if (menu != null)
+{
+    <Accordion>
+        @foreach (var category in menu)
+        {
+            <Collapse Visible="@GetVisibilityFor(category.ID)">
+                <CollapseHeader>
+                    <Button Clicked="@(() => ChangeVisibilityFor(category.ID))">
+                        <Div Flex="Flex.Column" Width="Width.Is100">
+                            <Heading Size="HeadingSize.Is5">@category.Title</Heading>
+                            <Paragraph>@category.Description</Paragraph>
+                        </Div>
+                    </Button>
+                </CollapseHeader>
+                <CollapseBody>
+                    <ListGroup Flush>
+                        @foreach (var itm in category.Items.OrderBy(i => i.CurrentPrice))
+                        {
+                            <ListGroupItem Clicked="() => itemModalDict[itm.ID].Show()">
+                                <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                                    <Heading Size="HeadingSize.Is5" Margin="Margin.Is1.FromBottom">@itm.Title</Heading>
+                                    @if (@itm.CurrentPrice != 0)
+                                    {
+                                        <Small>@itm.CurrentPrice?.ToString("c", _brand.Value.CurrencyFormatProvider)</Small>
+                                    }
+                                </Div>
+                                <Small>@itm.Description</Small>
+                            </ListGroupItem>
+                        }
+                    </ListGroup>
+                </CollapseBody>
+            </Collapse>
+        }
+    </Accordion>
+
+    @foreach (var itm in itmData)
+    {
+        <Modal @ref="itemModalDict[itm.Item.ID]">
+            <ModalContent Centered Scrollable>
+                <ModalHeader>
+                    <ModalTitle>@itm.Item.Title</ModalTitle>
+                    <CloseButton />
+                </ModalHeader>
+                <ModalBody>
+                    @foreach (var opt in itm.Item.Options)
+                    {
+                        <Field>
+                            <FieldLabel>@opt.Name</FieldLabel>
+                            @switch (opt.OptionType)
+                            {
+                                case MenuItemOptionTypeDTO.Selection:
+                                    <Select @bind-SelectedValue="itm.SelectOptions[opt.ID]" TValue="int">
+                                        @foreach (var val in opt.Values.OrderBy(v => v.PriceChangeToBase))
+                                    {
+                                        <SelectItem Value="@val.ID">@val.Name@(val.PriceChangeToBase != 0 ? $" ({val.PriceChangeToBase?.ToString("c", _brand.Value.CurrencyFormatProvider)})" : "")</SelectItem>
+                                    }
+                                </Select>
+                                    break;
+                                case MenuItemOptionTypeDTO.MultiSelect:
+                                    foreach (var val in opt.Values.OrderBy(v => v.Name))
+                                    {
+                                        <Check TValue="bool" @bind-Checked="itm.MultiSelectOptions[val.ID]">@val.Name@(val.PriceChangeToBase != 0 ? $" ({val.PriceChangeToBase?.ToString("c", _brand.Value.CurrencyFormatProvider)})" : "")</Check>
+                                    }
+                                    break;
+                            }
+                        </Field>
+                    }
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_menu_itmmod_fldlbl_count"]</FieldLabel>
+                        <NumericPicker @bind-Value="@itm.Count" TValue="int" Step="1" Min="1" Decimals="0"/>
+                    </Field>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_menu_itmmod_fldlbl_rem"]</FieldLabel>
+                        <TextEdit @bind-Text="@itm.Remarks" Placeholder="Bemerkungen hier eintragen..." />
+                    </Field>
+                </ModalBody>
+                <ModalFooter>
+                    <Button Color="Color.Danger" Clicked="() => { itemModalDict[itm.Item.ID]?.Hide(); }">@_localizer["str_pg_menu_itmmod_btn_cancel"]</Button>
+                    <Button Color="Color.Primary" Clicked="() => AddToCart(itm)">@_localizer["str_pg_menu_itmmod_btn_addtocart", itm.Price > 0 ? $" ({itm.Price?.ToString("c", _brand.Value.CurrencyFormatProvider)})" : ""]</Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+    }
+}
+
+@code {
+    IEnumerable<MenuCategoryDTO>? menu;
+    Dictionary<int, bool> visibilityDict = new Dictionary<int, bool>();
+    Dictionary<int, Modal> itemModalDict = new Dictionary<int, Modal>();
+    List<OrderedItem> itmData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _frwData.CurrentPageIsLoading = true;
+        _frwData.Crumbs.Clear();
+        _frwData.Crumbs.Add(new Tuple<string, string>("/Menu", _localizer["str_pg_menu_title"]));
+        menu = await _service.GetMenu();
+        itmData = new List<OrderedItem>(menu?.SelectMany(c => c.Items).Select(i => new OrderedItem(i)) ?? Enumerable.Empty<OrderedItem>());
+        _frwData.CurrentPageIsLoading = false;
+    }
+
+    private bool GetVisibilityFor(int categoryId)
+    {
+        if (!visibilityDict.ContainsKey(categoryId))
+            visibilityDict.Add(categoryId, true);
+
+        return visibilityDict[categoryId];
+    }
+
+    private void ChangeVisibilityFor(int categoryId)
+    {
+        if (!visibilityDict.ContainsKey(categoryId))
+            visibilityDict.Add(categoryId, true);
+
+        visibilityDict[categoryId] = !visibilityDict[categoryId];
+    }
+
+    private void AddToCart(OrderedItem itm)
+    {
+        itemModalDict[itm.Item.ID].Hide();
+        _cart.OrderedItems.Add((OrderedItem)itm.Clone());
+        itm.Reset();
+    }
+}

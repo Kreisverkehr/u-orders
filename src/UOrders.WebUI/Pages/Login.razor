@@ -1,0 +1,73 @@
+﻿@page "/Login"
+@using UOrders.DTOModel.V1.Authentication
+@using UOrders.WebUI.Services
+@inject IUOrdersService _authService
+@inject NavigationManager _navMgr
+@inject IStringLocalizer<Resource> _localizer
+
+<PageTitle>@_localizer["str_pg_login_title"]</PageTitle>
+
+<EditForm Model="loginData" OnValidSubmit="DoLogin">
+    <Field>
+        <Addons>
+            <Addon AddonType="AddonType.Start">
+                <AddonLabel><Icon Name="IconName.User" /></AddonLabel>
+            </Addon>
+            <Addon AddonType="AddonType.Body">
+                <TextEdit Placeholder="@_localizer["str_pg_login_fldplhldr_user"]" @bind-Text="loginData.Username" />
+            </Addon>
+        </Addons>
+    </Field>
+    <Field>
+        <Addons>
+            <Addon AddonType="AddonType.Start">
+                <AddonLabel><Icon Name="IconName.Star" /></AddonLabel>
+            </Addon>
+            <Addon AddonType="AddonType.Body">
+                <TextEdit Role="passwordTextRole" Placeholder="@_localizer["str_pg_login_fldplhldr_pass"]" @bind-Text="loginData.Password" />
+            </Addon>
+            <Addon AddonType="AddonType.End">
+                <Button Color="Color.Light"><Icon Name="passwordViewButtonIcon" Clicked="PasswordViewClicked" /></Button>
+            </Addon>
+        </Addons>
+    </Field>
+    <Alert Color="Color.Danger" Visible="@(!string.IsNullOrWhiteSpace(loginresult))">
+        <AlertMessage>
+            @loginresult
+        </AlertMessage>
+    </Alert>
+    <Button Color="Color.Primary" Type="ButtonType.Submit" Loading="isLoading">@_localizer["str_pg_login_btn_login"]</Button>
+</EditForm>
+
+@code {
+    LoginDTO loginData = new();
+    string loginresult = string.Empty;
+    bool isLoading = false;
+
+    TextRole passwordTextRole = TextRole.Password;
+    IconName passwordViewButtonIcon = IconName.Eye;
+
+    private async Task DoLogin()
+    {
+        isLoading = true;
+        if (await _authService.Login(loginData))
+            _navMgr.NavigateTo("/");
+        else
+            loginresult = _localizer["str_pg_login_msg_loginfailed"];
+        isLoading = false;
+    }
+
+    private void PasswordViewClicked(MouseEventArgs args)
+    {
+        if (passwordTextRole == TextRole.Password)
+        {
+            passwordTextRole = TextRole.Text;
+            passwordViewButtonIcon = IconName.EyeSlash;
+        }
+        else
+        {
+            passwordTextRole = TextRole.Password;
+            passwordViewButtonIcon = IconName.Eye;
+        }
+    }
+}

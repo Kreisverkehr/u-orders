@@ -1,0 +1,100 @@
+﻿@page "/MyData"
+@using UOrders.DTOModel.V1.Authentication
+@using UOrders.WebUI.Services
+@inject IUOrdersService _authService
+@inject NavigationManager _navMgr
+@inject IStringLocalizer<Resource> _localizer
+
+<PageTitle>@_localizer["str_pg_mydata_title"]</PageTitle>
+
+<EditForm Model="userData" OnValidSubmit="DoUpdate">
+    <Validations Mode="ValidationMode.Auto" Model="@userData" @ref="validations" ValidateOnLoad="false" StatusChanged="@ValidationStatusChanged">
+        <Validation>
+            <Field>
+                <Addons>
+                    <Addon AddonType="AddonType.Start">
+                        <AddonLabel><Icon Name="IconName.Bookmark" /></AddonLabel>
+                    </Addon>
+                    <Addon AddonType="AddonType.Body">
+                        <TextEdit Placeholder="@_localizer["str_pg_register_fldplhldr_name"]" @bind-Text="userData.Name">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Addon>
+                </Addons>
+            </Field>
+        </Validation>
+        <Validation>
+            <Field>
+                <Addons>
+                    <Addon AddonType="AddonType.Start">
+                        <AddonLabel><Icon Name="IconName.Mail" /></AddonLabel>
+                    </Addon>
+                    <Addon AddonType="AddonType.Body">
+                        <TextEdit Placeholder="@_localizer["str_pg_register_fldplhldr_mail"]" @bind-Text="userData.Email">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Addon>
+                </Addons>
+            </Field>
+        </Validation>
+        <Validation>
+            <Field>
+                <Addons>
+                    <Addon AddonType="AddonType.Start">
+                        <AddonLabel><Icon Name="IconName.Phone" /></AddonLabel>
+                    </Addon>
+                    <Addon AddonType="AddonType.Body">
+                        <TextEdit Role="TextRole.Telephone" Placeholder="@_localizer["str_pg_register_fldplhldr_phone"]" @bind-Text="userData.Phone">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Addon>
+                </Addons>
+            </Field>
+        </Validation>
+        <Alert Color="Color.Danger" Visible="@(!string.IsNullOrWhiteSpace(loginresult))">
+            <AlertMessage>
+                @loginresult
+            </AlertMessage>
+        </Alert>
+        <Button Color="Color.Primary" Type="ButtonType.Submit" Loading="isLoading" Disabled="preventRegistration">@_localizer["str_pg_mydata_btn_update"]</Button>
+    </Validations>
+</EditForm>
+
+@code {
+    UserDTO userData = new();
+    string loginresult = string.Empty;
+    bool isLoading = false;
+    Validations? validations;
+
+    bool preventRegistration = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        userData = await _authService.GetUser();
+    }
+
+    private async Task DoUpdate()
+    {
+        isLoading = true;
+
+        if (!await (validations?.ValidateAll() ?? Task.FromResult(false)))
+            return;
+
+        await _authService.UpdateUser(userData);
+
+        isLoading = false;
+    }
+
+    private async Task ValidationStatusChanged(ValidationsStatusChangedEventArgs e)
+    {
+        preventRegistration = !(e.Status != ValidationStatus.Error);
+    }
+}

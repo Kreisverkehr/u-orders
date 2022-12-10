@@ -1,0 +1,72 @@
+﻿@using UOrders.WebUI.Services
+@inherits LayoutComponentBase
+@inject FrameworkDataService _frwData
+@inject NavigationManager _navigationManager;
+@inject IUOrdersService _service
+
+<Layout Sider>
+    <LayoutSider>
+        <LayoutSiderContent>
+            <NavMenu />
+        </LayoutSiderContent>
+    </LayoutSider>
+    <Layout Loading="@_frwData.CurrentPageIsLoading">
+        <LayoutHeader Fixed Padding="Padding.Is4.FromTop.Is4.FromStart" Background="Background.White">
+            <Header />
+        </LayoutHeader>
+        <LayoutContent Padding="Padding.Is4.OnAll">
+            @Body
+        </LayoutContent>
+    </Layout>
+</Layout>
+
+<Modal @ref="modalRef" Closing="@OnModalClosing" Display="Display.Always">
+    <ModalContent Centered>
+        <ModalHeader>
+            <ModalTitle>Backend server unavailable</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+            The backendserver is unavailable. Check if URI is reachable from your network. If you are the administrator: Check if the backend server is up and running.
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Primary" Clicked="@Reload">Reload page</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+
+    private Modal? modalRef;
+
+    protected override Task OnInitializedAsync()
+    {
+        _frwData.CurrentPageIsLoadingHasChanged += (caller, e) => StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            byte[] randomBytes = new byte[16];
+            Random.Shared.NextBytes(randomBytes);
+            var randomString = Convert.ToBase64String(randomBytes);
+
+            var randomResult = await _service.Echo(randomString);
+
+            if (randomString != randomResult) modalRef?.Show();
+        }
+    }
+
+    private Task OnModalClosing(ModalClosingEventArgs e)
+    {
+        e.Cancel = true;
+
+        return Task.CompletedTask;
+    }
+
+    private void Reload()
+    {
+        _navigationManager.NavigateTo("/", true);
+    }
+}

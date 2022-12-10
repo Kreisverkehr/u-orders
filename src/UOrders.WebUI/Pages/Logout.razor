@@ -1,0 +1,13 @@
+﻿@page "/Logout"
+@using UOrders.DTOModel.V1.Authentication
+@using UOrders.WebUI.Services
+@inject IUOrdersService _authService
+@inject NavigationManager _navMgr
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await _authService.Logout();
+        _navMgr.NavigateTo("/");
+    }
+}

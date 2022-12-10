@@ -1,0 +1,91 @@
+version: '3.4'
+
+services:
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    restart: always
+    volumes:
+      - db:/var/opt/mssql:rw
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=yourStrong(!)Password
+      - MSSQL_PID=Express
+    networks:
+      - backend
+  
+  printer:
+    image: ghcr.io/kreisverkehr/u-orders:print-latest
+    restart: always
+    environment:
+      - Printer__Type=File
+      - Printer__CodePage=858
+#      - Printer__FilePath=/dev/usb/lp0
+      - Printer__FilePath=/printstream.dat
+      - Printer__Culture=de-DE
+      - AuthSecret=ThisIsThePrinterSecret
+#    devices:
+#      - "/dev/usb/lp0:/dev/usb/lp0"
+    networks:
+      - backend
+
+  service:
+    image: ghcr.io/kreisverkehr/u-orders:service-latest
+    restart: always
+    environment:
+      - Db__Provider=mssql
+      - Db__Host=db
+      - Db__Port=1433
+      - Db__User=sa
+      - Db__Password=yourStrong(!)Password
+      - ADMIN_USER=admin
+      - ADMIN_PASS=4u-Orders
+    depends_on:
+      - db
+      - printer
+    networks:
+      - backend
+
+  api:
+    image: ghcr.io/kreisverkehr/u-orders:api-latest
+    restart: always
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+      - service
+    environment:
+      - Db__Provider=mssql
+      - Db__Host=db
+      - Db__Port=1433
+      - Db__User=sa
+      - Db__Password=yourStrong(!)Password
+      - JWT__Secret=ThisIsTheWebApiSecret
+      - Printer__Host=printer
+      - Printer__Port=80
+      - Printer__Lang=de
+      - Printer__Secret=ThisIsThePrinterSecret
+      - PRINT_SERVICE_HOST=printer
+      - PRINT_SERVICE_PORT=80
+    networks:
+      - frontend
+      - backend
+
+  webui:
+    image: ghcr.io/kreisverkehr/u-orders:web-latest
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./appsettings.json:/usr/share/nginx/html/appsettings.json
+    depends_on:
+      - api
+    networks:
+      - frontend
+
+networks:
+  backend:
+  frontend:
+
+volumes:
+  db:

@@ -1,0 +1,19 @@
+﻿@page "/Orders"
+@using UOrders.DTOModel.V1.Authentication
+@using UOrders.WebUI.Services
+@inject IUOrdersService _service
+@inject IStringLocalizer<Resource> _localizer
+
+<PageTitle>@_localizer["str_pg_orders_title"]</PageTitle>
+<AuthorizeView Roles="@UserRoles.Admin">
+    <NotAuthorized>
+        <Paragraph>@_localizer["str_pg_orders_txt_notauthorized"]</Paragraph>
+    </NotAuthorized>
+    <Authorized>
+        <OrdersGrid GetOverview="_service.GetOrderOverview" GetOrder="_service.GetOrder" />
+    </Authorized>
+</AuthorizeView>
+
+@code {
+
+}

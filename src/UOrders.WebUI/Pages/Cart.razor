@@ -1,0 +1,355 @@
+﻿@page "/Cart"
+@using Microsoft.Extensions.Options
+@using UOrders.DTOModel.V1
+@using UOrders.WebUI.Options
+@using UOrders.WebUI.Services
+@inject IUOrdersService _service
+@inject FrameworkDataService _frwData
+@inject CartService _cart
+@inject IOptions<BrandOptions> _brand
+@inject IStringLocalizer<Resource> _localizer
+
+<PageTitle>@_localizer["str_pg_cart_title"]</PageTitle>
+
+<Steps SelectedStep="@selectedStep" SelectedStepChanged="@OnSelectedStepChanged">
+    <Items>
+        <Step Name="checkCart" Completed="@completedFlags[0]">@_localizer["str_pg_cart_step_checkcart_name"]</Step>
+        <Step Name="enterDetails" Completed="@completedFlags[1]">@_localizer["str_pg_cart_step_enterdetails_name"]</Step>
+        <Step Name="checkOrder" Completed="@completedFlags[2]">@_localizer["str_pg_cart_step_checkorder_name"]</Step>
+        <Step Name="complete" Completed="@completedFlags[3]">
+            <Marker>
+                <Icon Name="IconName.Flag" />
+            </Marker>
+            <Caption>
+                @_localizer["str_pg_cart_step_complete_name"]
+            </Caption>
+        </Step>
+    </Items>
+    <Content>
+        <StepPanel Name="checkCart">
+            <Div Flex="Flex.JustifyContent.Around">
+                <Button Color="Color.Dark" Clicked="() => _cart.OrderedItems.Clear()" Disabled="@PreventGoNext">@_localizer["str_pg_cart_step_checkcart_btn_clear_all"]</Button>
+            </Div>
+            @foreach (var itm in _cart.OrderedItems)
+            {
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is12">
+                        <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">@(itm.Count)x @itm.Item.Title</Heading>
+                    </Column>
+                </Row>
+                <Row Margin="Margin.Is3.FromBottom">
+                    <Column ColumnSize="ColumnSize.Is8">
+                        <Small>
+                            @foreach (var opt in itm.DisplayOptions)
+                            {
+                                <b>@(opt.Name): </b>
+                                @(string.Join(", ", opt.Values))
+                                <br />
+                            }
+                        </Small>
+                        <TextEdit @bind-Text="@itm.Remarks" Placeholder="@_localizer["str_pg_cart_step_checkcart_fldlbl_itmrem"]" />
+                    </Column>
+                    <Column ColumnSize="ColumnSize.Is4">
+                        <Button Color="Color.Primary" Clicked="() => IncreaseItemCount(itm)"><Icon Name="IconName.Add" /></Button>
+                        <Button Color="Color.Danger" Clicked="() => DecreaseItemCount(itm)">
+                            @if (itm.Count == 1)
+                            {
+                                <Icon Name="IconName.Delete" />
+                            }
+                            else
+                            {
+                                <Icon Name="IconName.Remove" />
+                            }
+                        </Button>
+                    </Column>
+                </Row>
+            }
+            <Div Flex="Flex.JustifyContent.Around">
+                <Button Color="Color.Light" Type="ButtonType.Link" To="/Menu">@_localizer["str_nav_entry_menu"]</Button>
+                <Button Color="Color.Primary" Clicked="() => Next()" Disabled="@PreventGoNext">@_localizer["str_pg_cart_btn_next"] <Icon Name="IconName.ChevronRight" /></Button>
+            </Div>
+        </StepPanel>
+        <StepPanel Name="enterDetails">
+            <Validations Mode="ValidationMode.Auto" Model="@_cart" @ref="validations">
+                <Validation>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_cart_step_enterdetails_fldlbl_name"]</FieldLabel>
+                        <TextEdit @bind-Text="@_cart.CustomerName" Placeholder="@_localizer["str_pg_cart_step_enterdetails_fldplhldr_name"]">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Field>
+                </Validation>
+                <Validation>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_cart_step_enterdetails_fldlbl_mail"]</FieldLabel>
+                        <TextEdit @bind-Text="@_cart.CustomerEmail" Placeholder="@_localizer["str_pg_cart_step_enterdetails_fldplhldr_mail"]">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Field>
+                </Validation>
+                <Validation>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_cart_step_enterdetails_fldplbl_phone"]</FieldLabel>
+                        <TextEdit @bind-Text="@_cart.CustomerPhone" Placeholder="+49 1234 1234567">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Field>
+                </Validation>
+                <Validation>
+                    <Field>
+                        <FieldLabel>@_localizer["str_pg_cart_step_enterdetails_fldplbl_rem"]</FieldLabel>
+                        <MemoEdit @bind-Text="@_cart.Remarks" Placeholder="@_localizer["str_pg_cart_step_enterdetails_fldpplhldr_rem"]">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </MemoEdit>
+                    </Field>
+                </Validation>
+            </Validations>
+            <Div Flex="Flex.JustifyContent.Around">
+                <Button Color="Color.Light" Clicked="() => Previous()"><Icon Name="IconName.ChevronLeft" /> @_localizer["str_pg_cart_btn_prev"]</Button>
+                <Button Color="Color.Primary" Clicked="() => Next()" Disabled="@PreventGoNext">@_localizer["str_pg_cart_btn_next"] <Icon Name="IconName.ChevronRight" /></Button>
+            </Div>
+        </StepPanel>
+        <StepPanel Name="checkOrder">
+            <Row>
+                <Column ColumnSize="ColumnSize.Is4">
+                    <Heading Size="HeadingSize.Is6">@_localizer["str_pg_cart_step_enterdetails_fldlbl_name"]:</Heading>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is8">
+                    <Text>@_cart.CustomerName</Text>
+                </Column>
+            </Row>
+            <Row>
+                <Column ColumnSize="ColumnSize.Is4">
+                    <Heading Size="HeadingSize.Is6">@_localizer["str_pg_cart_step_enterdetails_fldlbl_mail"]:</Heading>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is8">
+                    <Text>@_cart.CustomerEmail</Text>
+                </Column>
+            </Row>
+            <Row>
+                <Column ColumnSize="ColumnSize.Is4">
+                    <Heading Size="HeadingSize.Is6">@_localizer["str_pg_cart_step_enterdetails_fldplbl_phone"]:</Heading>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is8">
+                    <Text>@_cart.CustomerPhone</Text>
+                </Column>
+            </Row>
+            <Row>
+                <Column ColumnSize="ColumnSize.Is4">
+                    <Heading Size="HeadingSize.Is6">@_localizer["str_pg_cart_step_enterdetails_fldplbl_rem"]:</Heading>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is8">
+                    <pre>@_cart.Remarks</pre>
+                </Column>
+            </Row>
+            <ListGroup Flush>
+                @foreach (var itm in _cart.OrderedItems)
+                {
+                    <ListGroupItem>
+                        <Row>
+                            <Column ColumnSize="ColumnSize.Is10">
+                                <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">@(itm.Count)x @itm.Item.Title</Heading>
+                                <Small>
+                                    @foreach (var opt in itm.DisplayOptions)
+                                    {
+                                        <b>@(opt.Name): </b>
+                                        @(string.Join(", ", opt.Values))
+                                        <br />
+                                    }
+                                </Small>
+                                <Text>@itm.Remarks</Text>
+                            </Column>
+                            @if (itm.Price != null && itm.Price != 0)
+                            {
+                                <Column ColumnSize="ColumnSize.Is2">
+                                    @itm.Price?.ToString("c", _brand.Value.CurrencyFormatProvider)
+                                </Column>
+                            }
+                        </Row>
+                    </ListGroupItem>
+                }
+            </ListGroup>
+            <Div Flex="Flex.JustifyContent.Around">
+                <Button Color="Color.Light" Clicked="() => Previous()"><Icon Name="IconName.ChevronLeft" /> @_localizer["str_pg_cart_btn_prev"]</Button>
+                <Button Color="Color.Primary" Clicked="() => Next()" Disabled="@PreventGoNext">@_localizer["str_pg_cart_btn_sendorder"]</Button>
+            </Div>
+        </StepPanel>
+        <StepPanel Name="complete">
+            @if (sendingOrder)
+            {
+                <Heading Size="HeadingSize.Is3">@_localizer["str_pg_cart_step_complete_txt_sending"]</Heading>
+                <Div Position="Position.Relative" Style="height: 50px">
+                    <Div Position="Position.Absolute.Top.Is50.Start.Is50.Translate.Middle">
+                        <SpinKit Type="SpinKitType.Wave" />
+                    </Div>
+                </Div>
+            }
+            else
+            {
+                <Heading Size="HeadingSize.Is3">@_localizer["str_pg_cart_step_complete_txt_sent"]</Heading>
+            }
+        </StepPanel>
+    </Content>
+</Steps>
+
+<Modal @ref="deleteModal">
+    <ModalContent>
+        <ModalHeader>
+            <ModalTitle>@_localizer["str_pg_cart_delmod_title"]</ModalTitle>
+            <CloseButton />
+        </ModalHeader>
+        <ModalBody>
+            <Paragraph>@_localizer["str_pg_cart_delmod_body", itemToDelete?.Item.Title ?? string.Empty]</Paragraph>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Light" Clicked="@HideModal">@_localizer["str_pg_cart_delmod_btn_cancel"]</Button>
+            <Button Color="Color.Danger" Clicked="@DeleteItem">@_localizer["str_pg_cart_delmod_btn_delete"]</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+    private Modal? deleteModal;
+    private OrderedItem? itemToDelete;
+    private static Tuple<string, string> cardCrumb = new("/Cart", "Cart");
+    private string selectedStep = "checkCart";
+    private bool[] completedFlags = new bool[4];
+    Validations? validations;
+    private bool DoStepChange = false;
+    bool sendingOrder = false;
+
+    private bool CanGoNext =>
+        (selectedStep == "checkCart" && _cart.OrderedItems.Any()) ||
+        (selectedStep == "enterDetails" && (validations?.ValidateAll().Result ?? false)) ||
+        selectedStep == "checkOrder"
+        ;
+
+    private bool PreventGoNext => !CanGoNext;
+
+    protected override Task OnInitializedAsync()
+    {
+        cardCrumb = new("/Cart", _localizer["str_pg_cart_title"]);
+        if (!_frwData.Crumbs.Contains(cardCrumb))
+            _frwData.Crumbs.Add(cardCrumb);
+
+        return Task.CompletedTask;
+    }
+
+    private void IncreaseItemCount(OrderedItem orderedItem)
+    {
+        orderedItem.Count++;
+    }
+
+    private void DecreaseItemCount(OrderedItem orderedItem)
+    {
+        if (orderedItem.Count > 1)
+            orderedItem.Count--;
+        else
+        {
+            itemToDelete = orderedItem;
+            deleteModal?.Show();
+        }
+    }
+
+    private async Task DeleteItem()
+    {
+        if (itemToDelete != null)
+            _cart.OrderedItems.Remove(itemToDelete);
+        await HideModal();
+    }
+
+    private Task HideModal()
+    {
+        deleteModal?.Hide();
+        itemToDelete = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnSelectedStepChanged(string name)
+    {
+        if (DoStepChange)
+        {
+            DoStepChange = false;
+            selectedStep = name;
+
+            if (name == "complete")
+            {
+                sendingOrder = true;
+                await _service.CreateOrder(_cart.GetOrderCreate());
+                _cart.Reset();
+                completedFlags[3] = true;
+                sendingOrder = false;
+            }
+
+            if(name == "enterDetails")
+            {
+                var user = await _service.GetCurrentUser();
+
+                _cart.CustomerName = (user?.Name ?? user?.Username) ?? string.Empty;
+                _cart.CustomerEmail = user?.Email;
+                _cart.CustomerPhone = user?.Phone;
+            }
+        }
+    }
+
+    private void Next()
+    {
+        DoStepChange = true;
+        switch (selectedStep)
+        {
+            case "checkCart":
+                selectedStep = "enterDetails";
+                completedFlags[0] = true;
+                break;
+            case "enterDetails":
+                MergeItems();
+                selectedStep = "checkOrder";
+                completedFlags[1] = true;
+                break;
+            case "checkOrder":
+                selectedStep = "complete";
+                completedFlags[2] = true;
+                break;
+        }
+    }
+
+    private void MergeItems()
+    {
+        var groupedItems =
+            from item in _cart.OrderedItems
+            group item by item into itemGroup
+            let total = itemGroup.Select(i => i.Count).Sum()
+            select new { itemGroup.Key, total };
+
+        groupedItems = groupedItems.ToList();
+        _cart.OrderedItems.Clear();
+
+        foreach (var groupedItem in groupedItems)
+        {
+            groupedItem.Key.Count = groupedItem.total;
+            _cart.OrderedItems.Add(groupedItem.Key);
+        }
+    }
+
+    private void Previous()
+    {
+        DoStepChange = true;
+        switch (selectedStep)
+        {
+            case "enterDetails":
+                selectedStep = "checkCart";
+                break;
+            case "checkOrder":
+                selectedStep = "enterDetails";
+                break;
+        }
+    }
+}

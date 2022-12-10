@@ -1,0 +1,57 @@
+﻿@page "/"
+@using Microsoft.Extensions.Options
+@using UOrders.DTOModel.V1;
+@using UOrders.WebUI.Options
+@using UOrders.WebUI.Services;
+@inject IOptions<BrandOptions> _brandOpts
+@inject IUOrdersService _service
+
+<PageTitle>Home</PageTitle>
+
+<Jumbotron Background="Background.Light" Margin="Margin.Is4.FromBottom">
+    <JumbotronTitle Size="JumbotronTitleSize.Is4">@_brandOpts.Value.Name</JumbotronTitle>
+    <JumbotronSubtitle>@_brandOpts.Value.Description</JumbotronSubtitle>
+    <Divider></Divider>
+    <Paragraph>
+        <Button Color="Color.Primary" Type="ButtonType.Link" To="/Menu">Jetzt bestellen</Button>
+    </Paragraph>
+</Jumbotron>
+
+@if (reviews != null)
+{
+    <CardDeck>
+        @foreach (var review in reviews)
+        {
+            <Card>
+                <CardBody>
+                    <CardTitle>
+                        <Div Flex="Flex.JustifyContent.Between">
+                            <Paragraph>
+                                @review.Name
+                            </Paragraph>
+                            <Rating Disabled SelectedValue="Convert.ToInt32(review.StarRating)" />
+                        </Div>
+                    </CardTitle>
+                    <CardText>
+                        <Paragraph>@review.Text</Paragraph>
+                        <Paragraph TextAlignment="TextAlignment.End">
+                            <Small>@review.OrderedOn.GetValueOrDefault().ToString("D")</Small>
+                        </Paragraph>
+                    </CardText>
+                </CardBody>
+            </Card>
+        }
+    </CardDeck>
+}
+
+@code
+{
+    IEnumerable<ReviewDTO>? reviews = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        reviews = await _service.GetReviews();
+    }
+}

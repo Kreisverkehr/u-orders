@@ -1,0 +1,225 @@
+﻿@page "/Register"
+@using UOrders.DTOModel.V1.Authentication
+@using UOrders.WebUI.Services
+@inject IUOrdersService _authService
+@inject NavigationManager _navMgr
+@inject IStringLocalizer<Resource> _localizer
+
+<PageTitle>@_localizer["str_pg_register_title"]</PageTitle>
+
+<EditForm Model="registerData" OnValidSubmit="DoRegister">
+    <Validations Mode="ValidationMode.Auto" Model="@registerData" @ref="validations" ValidateOnLoad="false" StatusChanged="@ValidationStatusChanged">
+        <Validation AsyncValidator="@ValidateUserAsync" @ref="userValidation">
+            <Field>
+                <Addons>
+                    <Addon AddonType="AddonType.Start">
+                        <AddonLabel><Icon Name="IconName.User" /></AddonLabel>
+                    </Addon>
+                    <Addon AddonType="AddonType.Body">
+                        <TextEdit Placeholder="@_localizer["str_pg_register_fldplhldr_user"]" @bind-Text="registerData.Username">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Addon>
+                </Addons>
+            </Field>
+        </Validation>
+        <Validation>
+            <Field>
+                <Addons>
+                    <Addon AddonType="AddonType.Start">
+                        <AddonLabel><Icon Name="IconName.Bookmark" /></AddonLabel>
+                    </Addon>
+                    <Addon AddonType="AddonType.Body">
+                        <TextEdit Placeholder="@_localizer["str_pg_register_fldplhldr_name"]" @bind-Text="registerData.Name">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Addon>
+                </Addons>
+            </Field>
+        </Validation>
+        <Validation>
+            <Field>
+                <Addons>
+                    <Addon AddonType="AddonType.Start">
+                        <AddonLabel><Icon Name="IconName.Mail" /></AddonLabel>
+                    </Addon>
+                    <Addon AddonType="AddonType.Body">
+                        <TextEdit Placeholder="@_localizer["str_pg_register_fldplhldr_mail"]" @bind-Text="registerData.Email">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Addon>
+                </Addons>
+            </Field>
+        </Validation>
+        <Validation>
+            <Field>
+                <Addons>
+                    <Addon AddonType="AddonType.Start">
+                        <AddonLabel><Icon Name="IconName.Phone" /></AddonLabel>
+                    </Addon>
+                    <Addon AddonType="AddonType.Body">
+                        <TextEdit Role="TextRole.Telephone" Placeholder="@_localizer["str_pg_register_fldplhldr_phone"]" @bind-Text="registerData.Phone">
+                            <Feedback>
+                                <ValidationError />
+                            </Feedback>
+                        </TextEdit>
+                    </Addon>
+                </Addons>
+            </Field>
+        </Validation>
+        <Validation @ref="passValidation">
+            <Field>
+                <Addons>
+                    <Addon AddonType="AddonType.Start">
+                        <AddonLabel><Icon Name="IconName.Star" /></AddonLabel>
+                    </Addon>
+                    <Addon AddonType="AddonType.Body">
+                        <TextEdit Role="passwordTextRole" Placeholder="@_localizer["str_pg_register_fldplhldr_pass"]" @bind-Text="registerData.Password" />
+                    </Addon>
+                    <Addon AddonType="AddonType.End">
+                        <Button Color="Color.Light"><Icon Name="passwordViewButtonIcon" Clicked="PasswordViewClicked" /></Button>
+                    </Addon>
+                    <ValidationError />
+                </Addons>
+            </Field>
+        </Validation>
+        <Validation @ref="confirmPassValidation">
+            <Field>
+                <Addons>
+                    <Addon AddonType="AddonType.Start">
+                        <AddonLabel><Icon Name="IconName.Star" /></AddonLabel>
+                    </Addon>
+                    <Addon AddonType="AddonType.Body">
+                        <TextEdit Role="confirmPasswordTextRole" Placeholder="@_localizer["str_pg_register_fldplhldr_confirmpass"]" @bind-Text="registerData.ConfirmPassword" />
+                    </Addon>
+                    <Addon AddonType="AddonType.End">
+                        <Button Color="Color.Light"><Icon Name="confirmPasswordViewButtonIcon" Clicked="ConfirmPasswordViewClicked" /></Button>
+                    </Addon>
+                    <ValidationError />
+                </Addons>
+            </Field>
+        </Validation>
+        <Alert Color="Color.Danger" Visible="@(!string.IsNullOrWhiteSpace(loginresult))">
+            <AlertMessage>
+                @loginresult
+            </AlertMessage>
+        </Alert>
+        <Button Color="Color.Primary" Type="ButtonType.Submit" Loading="isLoading" Disabled="preventRegistration">@_localizer["str_pg_register_btn_register"]</Button>
+    </Validations>
+</EditForm>
+
+@code {
+    RegisterDTO registerData = new();
+    string loginresult = string.Empty;
+    bool isLoading = false;
+    Validations? validations;
+    Validation? userValidation;
+    Validation? passValidation;
+    Validation? confirmPassValidation;
+
+    TextRole passwordTextRole = TextRole.Password;
+    IconName passwordViewButtonIcon = IconName.Eye;
+    TextRole confirmPasswordTextRole = TextRole.Password;
+    IconName confirmPasswordViewButtonIcon = IconName.Eye;
+
+    bool preventRegistration = true;
+
+    private void PasswordViewClicked(MouseEventArgs args)
+    {
+        if (passwordTextRole == TextRole.Password)
+        {
+            passwordTextRole = TextRole.Text;
+            passwordViewButtonIcon = IconName.EyeSlash;
+        }
+        else
+        {
+            passwordTextRole = TextRole.Password;
+            passwordViewButtonIcon = IconName.Eye;
+        }
+    }
+
+    private void ConfirmPasswordViewClicked(MouseEventArgs args)
+    {
+        if (confirmPasswordTextRole == TextRole.Password)
+        {
+            confirmPasswordTextRole = TextRole.Text;
+            confirmPasswordViewButtonIcon = IconName.EyeSlash;
+        }
+        else
+        {
+            confirmPasswordTextRole = TextRole.Password;
+            confirmPasswordViewButtonIcon = IconName.Eye;
+        }
+    }
+
+    private async Task DoRegister()
+    {
+        isLoading = true;
+
+        if (!await (validations?.ValidateAll() ?? Task.FromResult(false)))
+            return;
+
+        if (await _authService.RegisterUser(registerData))
+        {
+            await _authService.Login(new()
+                {
+                    Username = registerData?.Username ?? string.Empty,
+                    Password = registerData?.Password ?? string.Empty
+                });
+            _navMgr.NavigateTo("/");
+        }
+        else
+            loginresult = _localizer["str_pg_login_msg_loginfailed"];
+        isLoading = false;
+    }
+
+    private async Task ValidationStatusChanged(ValidationsStatusChangedEventArgs e)
+    {
+        if (passValidation != null)
+            await passValidation.ValidateAsync();
+        if (confirmPassValidation != null)
+            await confirmPassValidation.ValidateAsync();
+
+        preventRegistration = !(
+            e.Status != ValidationStatus.Error &&
+            userValidation?.Status == ValidationStatus.Success &&
+            passValidation?.Status == ValidationStatus.Success &&
+            confirmPassValidation?.Status == ValidationStatus.Success);
+    }
+
+    async Task ValidateUserAsync(ValidatorEventArgs e, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(e.Value?.ToString()))
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = _localizer["str_pg_login_msg_username_required"];
+            return;
+        }
+
+        if (e.Value?.ToString()?.Length < 2)
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = _localizer["str_pg_login_msg_username_tooshort"];
+            return;
+        }
+
+        // delay the check for half a second to prevent sending every keystroke to the api
+        await Task.Delay(500, cancellationToken);
+
+        if (await _authService.IsUserAvailable(e.Value?.ToString() ?? string.Empty, cancellationToken))
+        {
+            e.Status = ValidationStatus.Success;
+        }
+        else
+        {
+            e.Status = ValidationStatus.Error;
+            e.ErrorText = _localizer["str_pg_login_msg_username_taken"];
+        }
+    }
+}

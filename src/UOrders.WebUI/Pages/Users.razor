@@ -1,0 +1,89 @@
+﻿@page "/Users"
+@using Blazorise.DataGrid;
+@using UOrders.DTOModel.V1.Authentication
+@using UOrders.DTOModel.V1;
+@using UOrders.WebUI.Services
+@inject IUOrdersService _service
+@inject IStringLocalizer<Resource> _localizer
+
+<PageTitle>@_localizer["str_pg_users_title"]</PageTitle>
+<AuthorizeView Roles="@UserRoles.Admin" Context="authorizeViewContext">
+    <NotAuthorized>
+        <Paragraph>@_localizer["str_pg_users_txt_notauthorized"]</Paragraph>
+    </NotAuthorized>
+    <Authorized>
+        <DataGrid TItem="UserDTO"
+                  Data="users"
+                  ReadData="LoadUsers"
+                  TotalItems="totalUsers"
+                  PageSizes="new int[] {5,10,20,50,100}"
+                  ShowPager
+                  ShowPageSizes
+                  @bind-SelectedRow="selectedUser"
+                  Responsive
+                  EditMode="DataGridEditMode.Inline"
+                  CommandMode="DataGridCommandMode.Default"
+                  Editable>
+            <DataGridColumns>
+                <DataGridColumn Field="@nameof(UserDTO.Username)" Caption="Username" />
+                <DataGridColumn Field="@nameof(UserDTO.Name)" Caption="Name" />
+                <DataGridColumn Field="@nameof(UserDTO.Email)" Caption="E-Mail" />
+                <DataGridColumn Field="@nameof(UserDTO.Phone)" Caption="Phone" />
+                <DataGridCheckColumn Field="@nameof(UserDTO.IsAdmin)" Caption="Admin?" Editable />
+                <DataGridCommandColumn NewCommandAllowed="false" EditCommandAllowed="true" DeleteCommandAllowed="false">
+                    <SaveCommandTemplate>
+                        <Button ElementId="btnSave" Type="ButtonType.Submit" PreventDefaultOnSubmit Color="Color.Success" Clicked="() => SaveUser(context.Item, context.Clicked)">@context.LocalizationString</Button>
+                    </SaveCommandTemplate>
+                    <CancelCommandTemplate>
+                        <Button ElementId="btnCancel" Color="Color.Secondary" Clicked="@context.Clicked">@context.LocalizationString</Button>
+                    </CancelCommandTemplate>
+                    <EditCommandTemplate>
+                        <Button ElementId="btnCancel" Color="Color.Primary" Clicked="@context.Clicked">@context.LocalizationString</Button>
+                    </EditCommandTemplate>
+                </DataGridCommandColumn>
+            </DataGridColumns>
+            <EmptyTemplate>
+                <div class="box">
+                    @_localizer["str_pg_users_txt_nousers"]
+                </div>
+            </EmptyTemplate>
+            <LoadingTemplate>
+                <Div Position="Position.Relative" Style="height: 50px">
+                    <Div Position="Position.Absolute.Top.Is50.Start.Is50.Translate.Middle">
+                        <SpinKit Type="SpinKitType.Wave" />
+                    </Div>
+                </Div>
+            </LoadingTemplate>
+        </DataGrid>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    IEnumerable<UserDTO>? users;
+    UserDTO? selectedUser;
+    int totalUsers;
+
+    public async Task LoadUsers(DataGridReadDataEventArgs<UserDTO> e)
+    {
+        if (!e.CancellationToken.IsCancellationRequested && e.ReadDataMode == DataGridReadDataMode.Paging)
+        {
+            var page = await _service.GetUsers(e.Page - 1, e.PageSize);
+            if (page == null) return;
+
+            totalUsers = page.TotalRecords;
+            users = page.PageData;
+        }
+    }
+
+    public async Task SaveUser(UserDTO? editedUser, EventCallback? internalSave)
+    {
+        if (internalSave != null)
+            await internalSave.Value.InvokeAsync();
+
+        if (editedUser != null)
+            if (editedUser.IsAdmin)
+                await _service.AddUserToRole(editedUser, UserRoles.Admin);
+            else
+                await _service.RemoveUserFromRole(editedUser, UserRoles.Admin);
+    }
+}

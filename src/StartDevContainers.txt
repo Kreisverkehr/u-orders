@@ -1,0 +1,4 @@
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=yourStrong(!)Password" -e "MSSQL_PID=Express" -p 51433:1433 -d mcr.microsoft.com/mssql/server:2019-latest
+docker run -e MYSQL_ROOT_PASSWORD=my-secret-pw -e MYSQL_USER=dev -e MYSQL_PASSWORD=dev -e MYSQL_DATABASE=dev -p 53306:3306 -d mysql:oracle
+docker run -e POSTGRES_PASSWORD=mysecretpassword -d -p 55432:5432 postgres:latest
+docker run -p 1080:1080 -p 1025:1025 -d maildev/maildev

@@ -1,0 +1,41 @@
+﻿@using UOrders.WebUI.Services
+@inject FrameworkDataService _frwData
+@inject CartService _cart
+
+<Div Flex="Flex.JustifyContent.Between" Margin="Margin.Is4.FromEnd">
+    <Breadcrumb Mode="BreadcrumbMode.Auto">
+        <BreadcrumbItem>
+            <BreadcrumbLink To="">Home</BreadcrumbLink>
+        </BreadcrumbItem>
+        @foreach (var item in _frwData.Crumbs)
+        {
+            <BreadcrumbItem>
+                <BreadcrumbLink To="@item.Item1">@item.Item2</BreadcrumbLink>
+            </BreadcrumbItem>
+        }
+    </Breadcrumb>
+    <Div Position="Position.Relative">
+        <Anchor To="/Cart" TextColor="@cartIconColor">
+            <Icon IconSize="IconSize.x2" Name="IconName.ShoppingCart" Position="Position.Relative" />
+            @if (_cart.OrderedItems.Any())
+            {
+                <Badge Color="Color.Danger" Position="Position.Absolute.Top.Is0.Start.Is100.Translate.Middle">
+                    @_cart.OrderedItems.Count
+                </Badge>
+            }
+        </Anchor>
+    </Div>
+</Div>
+@code {
+    TextColor cartIconColor =>
+        _cart.OrderedItems.Any() ?
+        TextColor.Dark :
+        TextColor.Black50;
+
+    protected override Task OnInitializedAsync()
+    {
+        _frwData.BreadCrumbsHasChanged += (o, e) => StateHasChanged();
+        _cart.CartChanged += (o, e) => StateHasChanged();
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,138 @@
+﻿@using Blazorise.DataGrid
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Options
+@using UOrders.DTOModel.V1
+@using UOrders.DTOModel.V1.Authentication
+@using UOrders.WebUI.Common
+@using UOrders.WebUI.Options
+@using UOrders.WebUI.Services
+@inject IUOrdersService _service
+@inject IOptions<BrandOptions> _brand
+@inject IStringLocalizer<Resource> _localizer
+
+<DataGrid TItem="OrderOverviewDTO"
+          Data="orders"
+          ReadData="LoadOrders"
+          DetailRowTrigger="LoadDetail"
+          DetailRowStartsVisible="false"
+          TotalItems="totalOrders"
+          PageSizes="new int[] {5,10,20,50,100}"
+          ShowPager
+          ShowPageSizes
+          @bind-SelectedRow="selectedOrder"
+          Responsive>
+    <DataGridColumns>
+        <DataGridColumn Field="@nameof(OrderOverviewDTO.ID)" Caption="#" />
+        <DataGridDateColumn Field="@nameof(OrderOverviewDTO.OrderedOnLocal)" Caption="Datum" DisplayFormat="{0:g}" />
+        <DataGridColumn Field="@nameof(OrderOverviewDTO.CustomerName)" Caption="Name" />
+        <DataGridNumericColumn Field="@nameof(OrderOverviewDTO.OrderedItems)" Caption="Anzahl" />
+        <DataGridNumericColumn Field="@nameof(OrderOverviewDTO.TotalPrice)" Caption="Preis" DisplayFormat="{0:c}" DisplayFormatProvider="_brand.Value.CurrencyFormatProvider" />
+    </DataGridColumns>
+    <DetailRowTemplate Context="rowContext">
+        @{
+            var order = rowContext as OrderOverviewDTO;
+            if (orderDetails.ContainsKey(order.ID))
+            {
+                @if (orderDetails[order.ID].Reviews.Any())
+                {
+                    <ListGroup Flush>
+                        @foreach (var review in orderDetails[order.ID].Reviews)
+                        {
+                            <ListGroupItem>
+                                <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                                    <Small>@review.Name</Small>
+                                    <Rating SelectedValue="@Convert.ToInt32(review.StarRating)" Disabled />
+                                </Div>
+                                <Paragraph>
+                                    @review.Text
+                                </Paragraph>
+                            </ListGroupItem>
+                        }
+                    </ListGroup>
+                }
+
+                <ListGroup Flush>
+                    @foreach (var item in orderDetails[order.ID].OrderedItems)
+                    {
+                        <ListGroupItem>
+                            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                                <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">@(item.Count)X @item.MenuItemTitle</Heading>
+                                <Small>@item.TotalPrice.ToString("c", _brand.Value.CurrencyFormatProvider)</Small>
+                            </Div>
+                            <Small Margin="Margin.Is1.FromBottom">
+                                @foreach (var option in item.CheckedOptions.GroupBy(o => o.OptionValueMenuItemOptionName))
+                                {
+                                    <b>@option.Key: </b>
+
+                                    @string.Join(", ", option.Select(o => o.OptionValueName))
+
+                                    <br />
+                                }
+                            </Small>
+                        </ListGroupItem>
+                    }
+                </ListGroup>
+            }
+            else
+            {
+                <Div Position="Position.Relative" Style="height: 50px">
+                    <Div Position="Position.Absolute.Top.Is50.Start.Is50.Translate.Middle">
+                        <SpinKit Type="SpinKitType.Wave" />
+                    </Div>
+                </Div>
+            }
+        }
+    </DetailRowTemplate>
+    <EmptyTemplate>
+        <div class="box">
+            @_localizer["str_pg_orders_txt_noorders"]
+        </div>
+    </EmptyTemplate>
+    <LoadingTemplate>
+        <Div Position="Position.Relative" Style="height: 50px">
+            <Div Position="Position.Absolute.Top.Is50.Start.Is50.Translate.Middle">
+                <SpinKit Type="SpinKitType.Wave" />
+            </Div>
+        </Div>
+    </LoadingTemplate>
+</DataGrid>
+
+@code {
+    IEnumerable<OrderOverviewDTO>? orders;
+    IDictionary<int, OrderDTO> orderDetails = new Dictionary<int, OrderDTO>();
+    OrderOverviewDTO? selectedOrder;
+    int totalOrders;
+
+    [Parameter]
+    public Func<int, int, Task<DataPage<OrderOverviewDTO>?>>? GetOverview { get; set; }
+
+    [Parameter]
+    public Func<int, Task<OrderDTO?>>? GetOrder { get; set; }
+
+    public async Task LoadOrders(DataGridReadDataEventArgs<OrderOverviewDTO> e)
+    {
+        if (!e.CancellationToken.IsCancellationRequested && e.ReadDataMode == DataGridReadDataMode.Paging && GetOverview != null)
+        {
+            var page = await GetOverview(e.Page - 1, e.PageSize);
+            if (page == null) return;
+
+            orderDetails.Clear();
+            totalOrders = page.TotalRecords;
+            orders = page.PageData;
+        }
+    }
+
+    public bool LoadDetail(DetailRowTriggerEventArgs<OrderOverviewDTO> e)
+    {
+        Task.Run(async () =>
+        {
+            if (!orderDetails.ContainsKey(e.Item.ID) && GetOrder != null)
+            {
+                orderDetails.Add(e.Item.ID, await GetOrder(e.Item.ID) ?? new());
+                StateHasChanged();
+            }
+        });
+
+        return true;
+    }
+}

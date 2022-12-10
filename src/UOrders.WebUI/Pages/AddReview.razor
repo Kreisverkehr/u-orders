@@ -1,0 +1,85 @@
+﻿@page "/AddReview/{orderId:int?}"
+@using Microsoft.Extensions.Options
+@using UOrders.DTOModel.V1
+@using UOrders.WebUI.Options
+@using UOrders.WebUI.Services
+@inject IUOrdersService _service
+@inject FrameworkDataService _frwData
+@inject IOptions<BrandOptions> _brand
+@inject IStringLocalizer<Resource> _localizer
+
+<PageTitle>@_localizer["str_pg_addreview_title"]</PageTitle>
+
+@if (OrderId != null && ReviewToken != null)
+{
+    if (!reviewSent)
+    {
+        <EditForm Model="reviewData" OnValidSubmit="CreateReview">
+            <Field>
+                <Label>Bewertung: </Label>
+                <Rating @bind-SelectedValue="reviewData.FullStarRating" />
+            </Field>
+            <Field>
+                <Label>Name: </Label>
+                <TextEdit @bind-Text="reviewData.Name" />
+            </Field>
+            <Field>
+                <Label>Beschreibung: </Label>
+                <MemoEdit @bind-Text="reviewData.Text" />
+            </Field>
+            <Alert Color="Color.Danger" Visible="@(!string.IsNullOrWhiteSpace(reviewError))">
+                <AlertMessage>
+                    @reviewError
+                </AlertMessage>
+            </Alert>
+            <Button Color="Color.Primary" Type="ButtonType.Submit" Loading="isLoading">@_localizer["str_pg_addreview_btn_submit"]</Button>
+        </EditForm>
+    } else
+    {
+        <Alert Color="Color.Success" Visible>
+            <AlertMessage>
+                @_localizer["str_pg_addreview_succ_reviewadded"]
+            </AlertMessage>
+        </Alert>
+    }
+}
+else
+{
+    <Alert Color="Color.Danger" Visible>
+        <AlertMessage>
+            @_localizer["str_pg_addreview_err_noorderid"]
+        </AlertMessage>
+    </Alert>
+}
+
+@code {
+    [Parameter]
+    public int? OrderId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "token")]
+    public Guid? ReviewToken { get; set; }
+
+    bool isLoading = false;
+    bool reviewSent = false;
+    string reviewError = string.Empty;
+    OrderReviewCreateDTO reviewData = new();
+
+    private async Task CreateReview()
+    {
+        isLoading = true;
+
+        try
+        {
+            // there is no way this method get's called without OrderId and ReviewToken beeing set, but the compiler doesn't know that.
+            // So we call GetValueOrDefault here which should always return the value from the uri. If not the api will fail.
+            await _service.CreateReview(OrderId.GetValueOrDefault(), ReviewToken.GetValueOrDefault(), reviewData);
+            reviewSent = true;
+        }
+        catch (Exception)
+        {
+            reviewError = _localizer["str_pg_addreview_err_submit"];
+        }
+        isLoading = false;
+    }
+}

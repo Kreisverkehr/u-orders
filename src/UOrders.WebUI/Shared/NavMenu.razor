@@ -1,0 +1,88 @@
+﻿@using Microsoft.Extensions.Options
+@using UOrders.DTOModel.V1.Authentication
+@using UOrders.WebUI.Options
+@inject IOptions<BrandOptions> _brand
+@inject IStringLocalizer<Resource> _localizer
+
+<Bar Mode="BarMode.VerticalInline"
+     CollapseMode="BarCollapseMode.Small"
+     Breakpoint="Breakpoint.Desktop"
+     NavigationBreakpoint="Breakpoint.Tablet"
+     ThemeContrast="ThemeContrast.Dark">
+    <BarBrand>
+        <BarItem>
+            <BarLink To="">
+                <BarIcon IconName="@_brand.Value.Icon" />@_brand.Value.Name
+            </BarLink>
+        </BarItem>
+    </BarBrand>
+    <BarToggler />
+    <BarMenu>
+        <BarStart>
+            <BarItem>
+                <BarLink To="">
+                    <BarIcon IconName="IconName.Home" />@_localizer["str_nav_entry_startpage"]
+                </BarLink>
+            </BarItem>
+            <BarItem>
+                <BarLink To="Menu">
+                    <BarIcon IconName="IconName.Utensils" />@_localizer["str_nav_entry_menu"]
+                </BarLink>
+            </BarItem>
+            <AuthorizeView Roles="@(UserRoles.Admin)">
+                <Authorized>
+                    <BarItem>
+                        <BarLink To="Orders">
+                            <BarIcon IconName="IconName.PizzaSlice" />@_localizer["str_nav_entry_orders"]
+                        </BarLink>
+                    </BarItem>
+                    <BarItem>
+                        <BarLink To="Admin">
+                            <BarIcon IconName="IconName.UserTie" />@_localizer["str_nav_entry_admin"]
+                        </BarLink>
+                    </BarItem>
+                    <BarItem>
+                        <BarLink To="Users">
+                            <BarIcon IconName="IconName.UserTie" />@_localizer["str_nav_entry_users"]
+                        </BarLink>
+                    </BarItem>
+                </Authorized>
+            </AuthorizeView>
+            <AuthorizeView Roles="@(UserRoles.User)">
+                <Authorized>
+                    <BarItem>
+                        <BarLink To="MyOrders">
+                            <BarIcon IconName="IconName.PizzaSlice" />@_localizer["str_nav_entry_orders"]
+                        </BarLink>
+                    </BarItem>
+                    <BarItem>
+                        <BarLink To="MyData">
+                            <BarIcon IconName="IconName.User" />@_localizer["str_nav_entry_mydata"]
+                        </BarLink>
+                    </BarItem>
+                </Authorized>
+            </AuthorizeView>
+            <AuthorizeView>
+                <Authorized>
+                    <BarItem>
+                        <BarLink To="Logout">
+                            <BarIcon IconName="IconName.Walking" />@_localizer["str_nav_entry_logout"]
+                        </BarLink>
+                    </BarItem>
+                </Authorized>
+                <NotAuthorized>
+                    <BarItem>
+                        <BarLink To="Login">
+                            <BarIcon IconName="IconName.User" />@_localizer["str_nav_entry_login"]
+                        </BarLink>
+                    </BarItem>
+                    <BarItem>
+                        <BarLink To="Register">
+                            <BarIcon IconName="IconName.UserPlus" />@_localizer["str_nav_entry_register"]
+                        </BarLink>
+                    </BarItem>
+                </NotAuthorized>
+            </AuthorizeView>
+        </BarStart>
+    </BarMenu>
+</Bar>
