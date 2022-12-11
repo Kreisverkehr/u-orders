@@ -166,6 +166,7 @@ jobs:
       run: docker push ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-edge-${{ matrix.ostag }}-${{ matrix.archtag }}
   
   update-latest-tags:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
