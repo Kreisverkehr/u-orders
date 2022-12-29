@@ -81,7 +81,7 @@ public sealed class OrdersRepository : IOrdersRepository
             where !price.ValidTo.HasValue || price.ValidTo > dbOrder.OrderedOn
             select price.Value * item.Count;
 
-        return basePriceComponents.Union(optionPriceComponents).Sum();
+        return basePriceComponents.Sum() + optionPriceComponents.Sum();
     }
 
     public decimal GetOrderTotalPrice(Order order) =>
