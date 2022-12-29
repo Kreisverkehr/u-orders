@@ -86,6 +86,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.Configure<IdentityOptions>(builder.Configuration.GetSection("Identity"));
+
 builder.Services.AddTransient<IOrdersRepository, OrdersRepository>();
 
 builder.Services.AddSingleton<IPrintQueue, PrintQueue>();

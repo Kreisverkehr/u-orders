@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Quartz;
@@ -94,7 +95,8 @@ var builder = Host.CreateDefaultBuilder(args)
         .AddUOrdersDbContext()
         .AddIdentityCore<UOrdersUser>()
         .AddRoles<IdentityRole>()
-        .AddEntityFrameworkStores<UOrdersDbContext>()
+        .AddEntityFrameworkStores<UOrdersDbContext>().Services
+        .AddOptions<IdentityOptions>().Configure<IConfiguration>((options, config) => config.GetSection("Identity").Bind(options))
     );
 
 var host = builder.Build();
