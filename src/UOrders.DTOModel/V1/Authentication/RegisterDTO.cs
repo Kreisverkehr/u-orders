@@ -37,10 +37,6 @@ public class RegisterDTO
 
     [DataType(DataType.Password)]
     [Required(ErrorMessageResourceType = typeof(Resource), ErrorMessageResourceName = "str_dto_register_err_passrequired")]
-    [StringLength(maximumLength: 4096, MinimumLength = 6,
-        ErrorMessageResourceType = typeof(Resource), ErrorMessageResourceName = "str_dto_register_err_passwordlength")]
-    [RegularExpression("(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#~€\\-,.])[A-Za-z\\d@$!%*?&#~€\\-,.]*",
-        ErrorMessageResourceType = typeof(Resource), ErrorMessageResourceName = "str_dto_register_err_passwordrequirements")]
     public string Password { get; set; } = string.Empty;
 
     [Phone(ErrorMessageResourceType = typeof(Resource), ErrorMessageResourceName = "str_dto_register_err_phone")]
