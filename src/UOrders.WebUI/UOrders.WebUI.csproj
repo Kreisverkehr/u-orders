@@ -14,7 +14,7 @@
     <PackageReference Include="Blazorise" Version="1.2.5" />
     <PackageReference Include="Blazorise.Bootstrap5" Version="1.2.5" />
     <PackageReference Include="Blazorise.DataGrid" Version="1.2.5" />
-    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.4" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.5" />
     <PackageReference Include="Blazorise.SpinKit" Version="1.2.5" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.21" />
