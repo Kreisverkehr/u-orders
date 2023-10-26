@@ -79,7 +79,7 @@ jobs:
       docker-repo: ${{ steps.repo.outputs.lowercase }}
     steps:
     - id: repo
-      uses: ASzc/change-string-case-action@v5
+      uses: ASzc/change-string-case-action@v6
       with:
         string: ${{ github.repository }}
 
