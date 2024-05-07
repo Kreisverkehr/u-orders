@@ -145,7 +145,7 @@ jobs:
        echo dockerfile ${{ matrix.dockerfile}}
     - uses: actions/checkout@v4
     - name: Download portable build
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: publish-output
     - name: Extract binaries for container
