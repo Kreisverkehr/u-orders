@@ -86,9 +86,6 @@ jobs:
           - os: windows-2022
             type: windows
             ostag: win2022
-          - os: windows-2019
-            type: windows
-            ostag: win2019
           - os: ubuntu-latest
             type: linux
             ostag: linux
@@ -106,27 +103,12 @@ jobs:
             tag: web
             archtag: x64
             dockerfile: Dockerfile.ci.win
-          - os: windows-2019
-            ostag: win2019
-            project: UOrders.WebUI
-            arch: amd64
-            type: windows
-            tag: web
-            archtag: x64
-            dockerfile: Dockerfile.ci.win
         exclude:
           - os: windows-2022
             arch: arm64
-          - os: windows-2019
-            arch: arm64
           - os: windows-2022
             arch: arm/v7
-          - os: windows-2019
-            arch: arm/v7
           - os: windows-2022
-            project: UOrders.WebUI
-            dockerfile: Dockerfile.ci
-          - os: windows-2019
             project: UOrders.WebUI
             dockerfile: Dockerfile.ci
     steps:
@@ -186,7 +168,6 @@ jobs:
     - name: Create docker manifest
       run: |
         docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-edge \
-          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-edge-win2019-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-edge-win2022-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-edge-linux-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-edge-linux-arm64 \
