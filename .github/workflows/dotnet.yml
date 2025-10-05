@@ -70,7 +70,7 @@ jobs:
     needs: [init-docker-builds, build]
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-2022, windows-2019]
+        os: [ubuntu-latest, windows-2022]
         project: [UOrders.Api, UOrders.Service, UOrders.PrintService, UOrders.WebUI]
         arch: [amd64, arm64, arm/v7]
         dockerfile: [Dockerfile.ci]
