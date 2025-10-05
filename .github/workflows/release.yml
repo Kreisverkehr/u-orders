@@ -95,7 +95,7 @@ jobs:
     needs: [init-docker-builds, set-version, build]
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-2022, windows-2019]
+        os: [ubuntu-latest, windows-2022]
         project: [UOrders.Api, UOrders.Service, UOrders.PrintService, UOrders.WebUI]
         arch: [amd64, arm64, arm/v7]
         dockerfile: [Dockerfile.ci]
@@ -111,9 +111,6 @@ jobs:
           - os: windows-2022
             type: windows
             ostag: win2022
-          - os: windows-2019
-            type: windows
-            ostag: win2019
           - os: ubuntu-latest
             type: linux
             ostag: linux
@@ -131,27 +128,12 @@ jobs:
             tag: web
             archtag: x64
             dockerfile: Dockerfile.ci.win
-          - os: windows-2019
-            ostag: win2019
-            project: UOrders.WebUI
-            arch: amd64
-            type: windows
-            tag: web
-            archtag: x64
-            dockerfile: Dockerfile.ci.win
         exclude:
           - os: windows-2022
             arch: arm64
-          - os: windows-2019
-            arch: arm64
           - os: windows-2022
             arch: arm/v7
-          - os: windows-2019
-            arch: arm/v7
           - os: windows-2022
-            project: UOrders.WebUI
-            dockerfile: Dockerfile.ci
-          - os: windows-2019
             project: UOrders.WebUI
             dockerfile: Dockerfile.ci
     steps:
@@ -211,31 +193,25 @@ jobs:
     - name: Create docker manifest
       run: |
         docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-latest \
-          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm
         docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}.${{ needs.set-version.outputs.minor }} \
-          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm
         docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }} \
-          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-arm
         docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-latest-win \
-          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64
         docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}.${{ needs.set-version.outputs.minor }}-win \
-          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64
         docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.major }}-win \
-          ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2019-x64 \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-win2022-x64
         docker manifest create ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-latest-linux \
           ghcr.io/${{ needs.init-docker-builds.outputs.docker-repo }}:${{ matrix.tag }}-${{ needs.set-version.outputs.version }}-linux-x64 \
