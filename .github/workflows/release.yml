@@ -18,7 +18,7 @@ jobs:
       minor: ${{ steps.gitversion.outputs.minor }}
       patch: ${{ steps.gitversion.outputs.patch }}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Setup .NET6
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [set-version]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
@@ -150,7 +150,7 @@ jobs:
        echo type ${{ matrix.type}}
        echo archtag ${{ matrix.archtag}}
        echo dockerfile ${{ matrix.dockerfile}}
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Download portable build
       uses: actions/download-artifact@v7
       with:
@@ -241,7 +241,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [set-version, build]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Download all workflow run artifacts
