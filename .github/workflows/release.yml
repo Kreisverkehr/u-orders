@@ -67,7 +67,7 @@ jobs:
     - name: Zip Output
       run: 7z a -tzip ${{ github.event.repository.name }}-${{ needs.set-version.outputs.version }}.zip ./staging/*
     - name: Upload
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: publish-output
         path: ${{ github.workspace }}/${{ github.event.repository.name }}-${{ needs.set-version.outputs.version }}.zip
